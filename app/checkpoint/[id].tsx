@@ -6,44 +6,45 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DesignColors, Spacing, BorderRadius, Typography, IconSizes } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
+import { CheckpointStepStatus, CheckpointStep } from '@/constants/checkpoint';
 
-// Checkpoint steps data
-const checkpointSteps = [
+// Mock checkpoint steps data - replace with real data from API
+const getMockCheckpointSteps = (): CheckpointStep[] => [
   {
     id: 1,
     title: 'Profile Verification',
-    status: 'completed' as const,
+    status: CheckpointStepStatus.COMPLETED,
     completedAt: 'Aug 04, 2025 at 10.00 AM',
   },
   {
     id: 2,
     title: 'History Taking',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
   {
     id: 3,
     title: 'Preliminary Test',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
   {
     id: 4,
     title: 'Visual Acuity Assessment',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
   {
     id: 5,
     title: 'External Eye Examination',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
   {
     id: 6,
     title: 'Refraction Assessment',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
   {
     id: 7,
     title: 'Referral & Case Submission',
-    status: 'pending' as const,
+    status: CheckpointStepStatus.PENDING,
   },
 ];
 
@@ -53,6 +54,8 @@ export default function CheckpointScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
+
+  const checkpointSteps = getMockCheckpointSteps();
 
   return (
     <ThemedView style={Layout.container}>
@@ -97,14 +100,19 @@ export default function CheckpointScreen() {
               <View
                 style={[
                   styles.stepNumber,
-                  step.status === 'completed'
+                  step.status === CheckpointStepStatus.COMPLETED
                     ? { backgroundColor: DesignColors.success }
-                    : { backgroundColor: step.id === 2 ? DesignColors.primary : colors.surface, borderWidth: 2, borderColor: colors.border },
+                    : {
+                        backgroundColor:
+                          step.id === 2 ? DesignColors.primary : colors.surface,
+                        borderWidth: 2,
+                        borderColor: colors.border,
+                      },
                 ]}>
                 <ThemedText
                   style={[
                     styles.stepNumberText,
-                    step.status === 'completed' || step.id === 2
+                    step.status === CheckpointStepStatus.COMPLETED || step.id === 2
                       ? { color: '#FFFFFF' }
                       : { color: colors.textSecondary },
                   ]}>
@@ -115,11 +123,11 @@ export default function CheckpointScreen() {
               {/* Step card */}
               <TouchableOpacity
                 style={[styles.stepCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                disabled={step.status === 'completed'}>
+                disabled={step.status === CheckpointStepStatus.COMPLETED}>
                 <View style={styles.stepCardContent}>
                   <ThemedText style={styles.stepTitle}>{step.title}</ThemedText>
 
-                  {step.status === 'completed' ? (
+                  {step.status === CheckpointStepStatus.COMPLETED ? (
                     <View style={[styles.completedBadge, { backgroundColor: '#D4F4DD' }]}>
                       <IconSymbol name="checkmark" size={14} color={DesignColors.success} />
                       <ThemedText style={[styles.completedText, { color: DesignColors.success }]}>
@@ -137,7 +145,7 @@ export default function CheckpointScreen() {
                 </View>
 
                 {/* Completed timestamp */}
-                {step.status === 'completed' && step.completedAt && (
+                {step.status === CheckpointStepStatus.COMPLETED && step.completedAt && (
                   <View style={styles.completedTimestamp}>
                     <IconSymbol name="calendar" size={IconSizes.sm} color={colors.textSecondary} />
                     <ThemedText style={[styles.completedTime, { color: colors.textSecondary }]}>

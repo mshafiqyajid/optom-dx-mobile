@@ -6,40 +6,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DesignColors, Spacing, BorderRadius, Typography, IconSizes } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
-
-// Mock data for patients - replace with real data
-const mockPatients = [
-  {
-    id: '002',
-    name: 'Nur Aisyah binti Rahman',
-    refNo: 'SKTP-20250803-002',
-    completed: true,
-  },
-  {
-    id: '003',
-    name: 'Lim Wei Xuan',
-    refNo: 'SKTP-20250803-003',
-    completed: false,
-  },
-  {
-    id: '004',
-    name: 'Faris Hakim bin Azman',
-    refNo: 'SKTP-20250803-004',
-    completed: true,
-  },
-  {
-    id: '005',
-    name: 'Arvind Raj a/l Kumar',
-    refNo: 'SKTP-20250803-005',
-    completed: true,
-  },
-  {
-    id: '006',
-    name: 'Siti Nur Syafiqah bt Zulkifli',
-    refNo: 'SKTP-20250803-006',
-    completed: false,
-  },
-];
+import { MOCK_PATIENTS } from '@/constants/patient';
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -113,13 +80,13 @@ export default function EventDetailsScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText style={[styles.registeredCount, { color: colors.textSecondary }]}>
-            Registered : {mockPatients.length}
+            Registered : {MOCK_PATIENTS.length}
           </ThemedText>
         </View>
 
         {/* Patient List */}
         <View style={styles.patientList}>
-          {mockPatients.map((patient) => (
+          {MOCK_PATIENTS.map((patient) => (
             <TouchableOpacity
               key={patient.id}
               style={[styles.patientCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
