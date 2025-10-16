@@ -27,9 +27,9 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarShowLabel: false,
         tabBarStyle: {
-          height: 88,
-          paddingBottom: 28,
-          paddingTop: 8,
+          height: 100,
+          paddingBottom: 32,
+          paddingTop: 12,
           backgroundColor: colorScheme === 'dark' ? '#151718' : '#FFFFFF',
           borderTopColor: colorScheme === 'dark' ? '#2A2A2A' : '#E0E0E0',
         },
@@ -75,9 +75,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
   },
