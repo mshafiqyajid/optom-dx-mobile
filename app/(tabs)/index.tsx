@@ -5,6 +5,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { UpcomingEventsCarousel } from '@/components/ui/upcoming-events-carousel';
 import { UserProfileHeader } from '@/components/ui/user-profile-header';
+import { DesignColors, Spacing, IconSizes } from '@/constants/design-system';
+import { Layout, Cards, getThemedColors } from '@/constants/styles';
 
 // Mock data - replace with real data later
 const upcomingEvents = [
@@ -54,17 +56,18 @@ const eventsList = [
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const colors = getThemedColors(isDark);
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <ThemedView style={Layout.container}>
+      <ScrollView style={Layout.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header with Profile */}
         <View style={styles.header}>
           <UserProfileHeader name="Ahmad Zaki" role="Operator" online={true} size="medium" />
         </View>
 
         {/* Upcoming Events Carousel */}
-        <View style={styles.section}>
+        <View style={Layout.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             UPCOMING EVENT
           </ThemedText>
@@ -72,36 +75,31 @@ export default function HomeScreen() {
         </View>
 
         {/* List of Events Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View style={Layout.section}>
+          <View style={Layout.sectionHeader}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>
               LIST OF EVENT
             </ThemedText>
             <TouchableOpacity>
-              <IconSymbol name="slider.horizontal.3" size={24} color={isDark ? '#9BA1A6' : '#687076'} />
+              <IconSymbol name="slider.horizontal.3" size={IconSizes.md} color={colors.icon} />
             </TouchableOpacity>
           </View>
 
           {eventsList.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              style={[
-                styles.eventItem,
-                { backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5', borderColor: isDark ? '#2A2A2A' : '#E0E0E0' },
-              ]}>
-              <View style={[styles.eventIcon, { backgroundColor: '#B8A072' }]}>
-                <IconSymbol name="calendar" size={24} color="#FFFFFF" />
+            <TouchableOpacity key={event.id} style={[styles.eventItem, Cards.base(isDark)]}>
+              <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
+                <IconSymbol name="calendar" size={IconSizes.md} color="#FFFFFF" />
               </View>
               <View style={styles.eventContent}>
                 <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
                   {event.title}
                 </ThemedText>
-                <ThemedText style={[styles.eventDate, { color: isDark ? '#9BA1A6' : '#687076' }]}>
+                <ThemedText style={[styles.eventDate, { color: colors.textSecondary }]}>
                   {event.date}
                 </ThemedText>
               </View>
               <TouchableOpacity style={styles.eventMenu}>
-                <IconSymbol name="ellipsis" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
+                <IconSymbol name="ellipsis" size={IconSizes.sm} color={colors.icon} />
               </TouchableOpacity>
             </TouchableOpacity>
           ))}
@@ -115,26 +113,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.lg,
     paddingTop: 60,
-    paddingBottom: 20,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    paddingBottom: Spacing.lg,
   },
   sectionTitle: {
     fontSize: 13,
@@ -144,10 +126,7 @@ const styles = StyleSheet.create({
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
+    marginBottom: Spacing.md,
   },
   eventIcon: {
     width: 48,
@@ -158,7 +137,7 @@ const styles = StyleSheet.create({
   },
   eventContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: Spacing.md,
   },
   eventTitle: {
     fontSize: 13,
@@ -169,6 +148,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   eventMenu: {
-    padding: 8,
+    padding: Spacing.sm,
   },
 });
