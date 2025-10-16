@@ -108,13 +108,13 @@ const styles = StyleSheet.create({
   },
   valueContainer: {
     position: 'absolute',
-    bottom: Spacing.lg,
+    bottom: 0,
     alignItems: 'center',
   },
   valueBox: {
-    width: 88,
-    height: 88,
-    borderRadius: 20,
+    width: 68,
+    height: 68,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E5E5',
   },
   valueInput: {
-    fontSize: 56,
+    fontSize: 42,
     fontWeight: Typography.fontWeight.bold,
     color: '#000000',
     width: '100%',
