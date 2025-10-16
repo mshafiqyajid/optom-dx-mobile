@@ -15,6 +15,8 @@ export default function PreliminaryTestScreen() {
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  const [currentStep, setCurrentStep] = useState(1);
+
   // Section A: Old Prescription (OLD RX)
   // Right Eye
   const [rightEyeSphere, setRightEyeSphere] = useState('-1.00');
@@ -33,8 +35,273 @@ export default function PreliminaryTestScreen() {
   const [leftEyePD, setLeftEyePD] = useState('0');
   const [pdDistance, setPdDistance] = useState('0');
 
-  const handleDone = () => {
-    router.back();
+  // Section C: Cover Test
+  const [deviationSize, setDeviationSize] = useState<'small' | 'big' | null>('small');
+  const [deviationType, setDeviationType] = useState<'exophoria' | 'esophoria' | null>('exophoria');
+
+  const handleNext = () => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      // Navigate back or to next section
+      router.back();
+    }
+  };
+
+  const RadioButton = ({
+    label,
+    selected,
+    onPress,
+  }: {
+    label: string;
+    selected: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[
+        styles.radioButton,
+        {
+          borderColor: selected ? DesignColors.primary : colors.border,
+        },
+      ]}
+      onPress={onPress}>
+      <ThemedText style={styles.radioLabel}>{label}</ThemedText>
+      <View
+        style={[
+          styles.radioCircle,
+          { borderColor: selected ? DesignColors.primary : '#CCCCCC' },
+        ]}>
+        {selected && <View style={[styles.radioCircleInner, { backgroundColor: DesignColors.primary }]} />}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        // Section A & B
+        return (
+          <>
+            {/* Section A Card */}
+            <View style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
+                <ThemedText style={styles.sectionTitle}>
+                  Section A : Old Prescription (OLD RX)
+                </ThemedText>
+              </View>
+
+              <View style={styles.questionContent}>
+                {/* Right Eye */}
+                <View style={styles.eyeSection}>
+                  <ThemedText style={styles.eyeLabel}>Right Eye (R)</ThemedText>
+
+                  <View style={styles.prescriptionRow}>
+                    <TextInput
+                      value={rightEyeSphere}
+                      onChangeText={setRightEyeSphere}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <ThemedText style={styles.separator}>/</ThemedText>
+                    <TextInput
+                      value={rightEyeCylinder}
+                      onChangeText={setRightEyeCylinder}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <ThemedText style={styles.separator}>x</ThemedText>
+                    <TextInput
+                      value={rightEyeAxis}
+                      onChangeText={setRightEyeAxis}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <TextInput
+                      value={rightEyeVA}
+                      onChangeText={setRightEyeVA}
+                      style={[
+                        styles.inputField,
+                        styles.vaInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                  </View>
+                </View>
+
+                {/* Left Eye */}
+                <View style={styles.eyeSection}>
+                  <ThemedText style={styles.eyeLabel}>Left Eye (L)</ThemedText>
+
+                  <View style={styles.prescriptionRow}>
+                    <TextInput
+                      value={leftEyeSphere}
+                      onChangeText={setLeftEyeSphere}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <ThemedText style={styles.separator}>/</ThemedText>
+                    <TextInput
+                      value={leftEyeCylinder}
+                      onChangeText={setLeftEyeCylinder}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <ThemedText style={styles.separator}>x</ThemedText>
+                    <TextInput
+                      value={leftEyeAxis}
+                      onChangeText={setLeftEyeAxis}
+                      style={[
+                        styles.inputField,
+                        styles.prescriptionInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                    <TextInput
+                      value={leftEyeVA}
+                      onChangeText={setLeftEyeVA}
+                      style={[
+                        styles.inputField,
+                        styles.vaInput,
+                        { color: colors.text, borderColor: colors.border },
+                      ]}
+                      textAlign="center"
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Section B Card */}
+            <View style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
+                <ThemedText style={styles.sectionTitle}>Section B : Pupillary Distance</ThemedText>
+              </View>
+
+              <View style={styles.questionContent}>
+                <View style={styles.pdRow}>
+                  <View style={styles.pdColumn}>
+                    <ThemedText style={styles.pdLabel}>Right Eye (R)</ThemedText>
+                    <View style={styles.pdInputContainer}>
+                      <TextInput
+                        value={rightEyePD}
+                        onChangeText={setRightEyePD}
+                        style={[
+                          styles.inputField,
+                          styles.pdInput,
+                          { color: colors.text, borderColor: colors.border },
+                        ]}
+                        textAlign="center"
+                      />
+                      <ThemedText style={styles.unit}>mm</ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={styles.pdColumn}>
+                    <ThemedText style={styles.pdLabel}>Left Eye (L)</ThemedText>
+                    <View style={styles.pdInputContainer}>
+                      <TextInput
+                        value={leftEyePD}
+                        onChangeText={setLeftEyePD}
+                        style={[
+                          styles.inputField,
+                          styles.pdInput,
+                          { color: colors.text, borderColor: colors.border },
+                        ]}
+                        textAlign="center"
+                      />
+                      <ThemedText style={styles.unit}>mm</ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={styles.pdColumn}>
+                    <ThemedText style={styles.pdLabel}>PD Distance</ThemedText>
+                    <View style={styles.pdInputContainer}>
+                      <TextInput
+                        value={pdDistance}
+                        onChangeText={setPdDistance}
+                        style={[
+                          styles.inputField,
+                          styles.pdInput,
+                          { color: colors.text, borderColor: colors.border },
+                        ]}
+                        textAlign="center"
+                      />
+                      <ThemedText style={styles.unit}>mm</ThemedText>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </>
+        );
+
+      case 2:
+        // Section C: Cover Test
+        return (
+          <View style={styles.sectionCard}>
+            <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
+              <ThemedText style={styles.sectionTitle}>Section C : Cover Test</ThemedText>
+            </View>
+
+            <View style={styles.questionContent}>
+              <View style={styles.questionContainer}>
+                <ThemedText style={styles.questionLabel}>Deviation Size</ThemedText>
+
+                <RadioButton
+                  label="Small"
+                  selected={deviationSize === 'small'}
+                  onPress={() => setDeviationSize('small')}
+                />
+                <RadioButton
+                  label="Big"
+                  selected={deviationSize === 'big'}
+                  onPress={() => setDeviationSize('big')}
+                />
+              </View>
+
+              <View style={styles.questionContainer}>
+                <ThemedText style={styles.questionLabel}>Type of Deviation</ThemedText>
+
+                <RadioButton
+                  label="Exophoria"
+                  selected={deviationType === 'exophoria'}
+                  onPress={() => setDeviationType('exophoria')}
+                />
+                <RadioButton
+                  label="Esophoria"
+                  selected={deviationType === 'esophoria'}
+                  onPress={() => setDeviationType('esophoria')}
+                />
+              </View>
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -49,180 +316,7 @@ export default function PreliminaryTestScreen() {
       </View>
 
       <ScrollView style={Layout.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Section A Card */}
-          <View style={styles.sectionCard}>
-            <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
-              <ThemedText style={styles.sectionTitle}>
-                Section A : Old Prescription (OLD RX)
-              </ThemedText>
-            </View>
-
-            <View style={styles.questionContent}>
-              {/* Right Eye */}
-              <View style={styles.eyeSection}>
-                <ThemedText style={styles.eyeLabel}>Right Eye (R)</ThemedText>
-
-                <View style={styles.prescriptionRow}>
-                  <TextInput
-                    value={rightEyeSphere}
-                    onChangeText={setRightEyeSphere}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={rightEyeCylinder}
-                    onChangeText={setRightEyeCylinder}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <ThemedText style={styles.separator}>x</ThemedText>
-                  <TextInput
-                    value={rightEyeAxis}
-                    onChangeText={setRightEyeAxis}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <TextInput
-                    value={rightEyeVA}
-                    onChangeText={setRightEyeVA}
-                    style={[
-                      styles.inputField,
-                      styles.vaInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                </View>
-              </View>
-
-              {/* Left Eye */}
-              <View style={styles.eyeSection}>
-                <ThemedText style={styles.eyeLabel}>Left Eye (L)</ThemedText>
-
-                <View style={styles.prescriptionRow}>
-                  <TextInput
-                    value={leftEyeSphere}
-                    onChangeText={setLeftEyeSphere}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={leftEyeCylinder}
-                    onChangeText={setLeftEyeCylinder}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <ThemedText style={styles.separator}>x</ThemedText>
-                  <TextInput
-                    value={leftEyeAxis}
-                    onChangeText={setLeftEyeAxis}
-                    style={[
-                      styles.inputField,
-                      styles.prescriptionInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                  <TextInput
-                    value={leftEyeVA}
-                    onChangeText={setLeftEyeVA}
-                    style={[
-                      styles.inputField,
-                      styles.vaInput,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    textAlign="center"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Section B Card */}
-          <View style={styles.sectionCard}>
-            <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
-              <ThemedText style={styles.sectionTitle}>Section B : Pupillary Distance</ThemedText>
-            </View>
-
-            <View style={styles.questionContent}>
-              <View style={styles.pdRow}>
-                <View style={styles.pdColumn}>
-                  <ThemedText style={styles.pdLabel}>Right Eye (R)</ThemedText>
-                  <View style={styles.pdInputContainer}>
-                    <TextInput
-                      value={rightEyePD}
-                      onChangeText={setRightEyePD}
-                      style={[
-                        styles.inputField,
-                        styles.pdInput,
-                        { color: colors.text, borderColor: colors.border },
-                      ]}
-                      textAlign="center"
-                    />
-                    <ThemedText style={styles.unit}>mm</ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.pdColumn}>
-                  <ThemedText style={styles.pdLabel}>Left Eye (L)</ThemedText>
-                  <View style={styles.pdInputContainer}>
-                    <TextInput
-                      value={leftEyePD}
-                      onChangeText={setLeftEyePD}
-                      style={[
-                        styles.inputField,
-                        styles.pdInput,
-                        { color: colors.text, borderColor: colors.border },
-                      ]}
-                      textAlign="center"
-                    />
-                    <ThemedText style={styles.unit}>mm</ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.pdColumn}>
-                  <ThemedText style={styles.pdLabel}>PD Distance</ThemedText>
-                  <View style={styles.pdInputContainer}>
-                    <TextInput
-                      value={pdDistance}
-                      onChangeText={setPdDistance}
-                      style={[
-                        styles.inputField,
-                        styles.pdInput,
-                        { color: colors.text, borderColor: colors.border },
-                      ]}
-                      textAlign="center"
-                    />
-                    <ThemedText style={styles.unit}>mm</ThemedText>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
+        <View style={styles.content}>{renderStep()}</View>
 
         {/* Bottom padding for button */}
         <View style={{ height: 120 }} />
@@ -232,8 +326,11 @@ export default function PreliminaryTestScreen() {
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleDone}>
-          <ThemedText style={styles.nextButtonText}>Done</ThemedText>
+          onPress={handleNext}>
+          <ThemedText style={styles.nextButtonText}>
+            {currentStep === 2 ? 'Save' : 'Next'}
+          </ThemedText>
+          {currentStep < 2 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -338,6 +435,41 @@ const styles = StyleSheet.create({
   unit: {
     fontSize: Typography.fontSize.sm,
     color: '#666666',
+  },
+  questionContainer: {
+    marginBottom: Spacing.xl,
+  },
+  questionLabel: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.medium,
+    marginBottom: Spacing.md,
+  },
+  radioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    marginBottom: Spacing.sm,
+  },
+  radioLabel: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  radioCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioCircleInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   bottomContainer: {
     position: 'absolute',
