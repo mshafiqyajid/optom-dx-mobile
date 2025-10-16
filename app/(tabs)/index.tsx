@@ -1,4 +1,5 @@
 import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -11,18 +12,21 @@ import { Layout, Cards, getThemedColors } from '@/constants/styles';
 // Mock data - replace with real data later
 const upcomingEvents = [
   {
+    id: 1,
     title: 'School Eye Screening –',
     subtitle: 'SK Taman Putra',
     date: 'Monday, 04 August 2025',
     time: '09:00am - 12:30pm',
   },
   {
+    id: 2,
     title: 'Community Eye Screening –',
     subtitle: 'Putrajaya Precinct 11',
     date: 'Thursday, 05 August 2025',
     time: '08:00am - 4:00pm',
   },
   {
+    id: 3,
     title: 'Corporate Screening –',
     subtitle: 'Tenaga Nasional HQ',
     date: 'Friday, 10 August 2025',
@@ -54,9 +58,14 @@ const eventsList = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
+
+  const handleEventPress = (eventId: number) => {
+    router.push(`/event/${eventId}`);
+  };
 
   return (
     <ThemedView style={Layout.container}>
@@ -71,7 +80,12 @@ export default function HomeScreen() {
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             UPCOMING EVENT
           </ThemedText>
-          <UpcomingEventsCarousel events={upcomingEvents} />
+          <UpcomingEventsCarousel
+            events={upcomingEvents.map((event) => ({
+              ...event,
+              onPress: () => handleEventPress(event.id),
+            }))}
+          />
         </View>
 
         {/* List of Events Section */}
@@ -86,7 +100,10 @@ export default function HomeScreen() {
           </View>
 
           {eventsList.map((event) => (
-            <TouchableOpacity key={event.id} style={[styles.eventItem, Cards.base(isDark)]}>
+            <TouchableOpacity
+              key={event.id}
+              style={[styles.eventItem, Cards.base(isDark)]}
+              onPress={() => handleEventPress(event.id)}>
               <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
                 <IconSymbol name="calendar" size={IconSizes.md} color="#FFFFFF" />
               </View>
@@ -98,7 +115,12 @@ export default function HomeScreen() {
                   {event.date}
                 </ThemedText>
               </View>
-              <TouchableOpacity style={styles.eventMenu}>
+              <TouchableOpacity
+                style={styles.eventMenu}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  // Handle menu press
+                }}>
                 <IconSymbol name="ellipsis" size={IconSizes.sm} color={colors.icon} />
               </TouchableOpacity>
             </TouchableOpacity>
