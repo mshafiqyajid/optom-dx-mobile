@@ -127,6 +127,8 @@ export default function CheckpointScreen() {
                 onPress={() => {
                   if (step.title === 'History Taking') {
                     router.push(`/history-taking/${id}`);
+                  } else if (step.title === 'Preliminary Test') {
+                    router.push(`/preliminary-test/${id}`);
                   }
                 }}>
                 <View style={styles.stepCardContent}>
