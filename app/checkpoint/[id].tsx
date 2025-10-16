@@ -123,7 +123,12 @@ export default function CheckpointScreen() {
               {/* Step card */}
               <TouchableOpacity
                 style={[styles.stepCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                disabled={step.status === CheckpointStepStatus.COMPLETED}>
+                disabled={step.status === CheckpointStepStatus.COMPLETED}
+                onPress={() => {
+                  if (step.title === 'History Taking') {
+                    router.push(`/history-taking/${id}`);
+                  }
+                }}>
                 <View style={styles.stepCardContent}>
                   <ThemedText style={styles.stepTitle}>{step.title}</ThemedText>
 
