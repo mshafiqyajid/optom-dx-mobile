@@ -122,7 +122,8 @@ export default function EventDetailsScreen() {
           {mockPatients.map((patient) => (
             <TouchableOpacity
               key={patient.id}
-              style={[styles.patientCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              style={[styles.patientCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => router.push(`/checkpoint/${patient.id}`)}>
               <View style={[styles.patientAvatar, { backgroundColor: colors.border }]}>
                 <IconSymbol name="person" size={IconSizes.md} color={colors.icon} />
               </View>
