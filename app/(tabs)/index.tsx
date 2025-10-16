@@ -3,14 +3,30 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { UpcomingEventsCarousel } from '@/components/ui/upcoming-events-carousel';
+import { UserProfileHeader } from '@/components/ui/user-profile-header';
 
 // Mock data - replace with real data later
-const upcomingEvent = {
-  title: 'School Eye Screening –',
-  subtitle: 'SK Taman Putra',
-  date: 'Monday, 04 August 2025',
-  time: '09:00am - 12:30pm',
-};
+const upcomingEvents = [
+  {
+    title: 'School Eye Screening –',
+    subtitle: 'SK Taman Putra',
+    date: 'Monday, 04 August 2025',
+    time: '09:00am - 12:30pm',
+  },
+  {
+    title: 'Community Eye Screening –',
+    subtitle: 'Putrajaya Precinct 11',
+    date: 'Thursday, 05 August 2025',
+    time: '08:00am - 4:00pm',
+  },
+  {
+    title: 'Corporate Screening –',
+    subtitle: 'Tenaga Nasional HQ',
+    date: 'Friday, 10 August 2025',
+    time: '10:00am - 4:00pm',
+  },
+];
 
 const eventsList = [
   {
@@ -44,55 +60,15 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header with Profile */}
         <View style={styles.header}>
-          <View style={styles.profileSection}>
-            <View>
-              <ThemedText type="title" style={styles.userName}>
-                Ahmad Zaki
-              </ThemedText>
-              <View style={styles.statusContainer}>
-                <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-                <ThemedText style={[styles.statusText, { color: isDark ? '#9BA1A6' : '#687076' }]}>
-                  Operator
-                </ThemedText>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.avatarContainer}>
-              <View style={[styles.avatar, { backgroundColor: isDark ? '#444' : '#E0E0E0' }]}>
-                <IconSymbol name="person.fill" size={32} color={isDark ? '#9BA1A6' : '#687076'} />
-              </View>
-            </TouchableOpacity>
-          </View>
+          <UserProfileHeader name="Ahmad Zaki" role="Operator" online={true} size="medium" />
         </View>
 
-        {/* Upcoming Event Section */}
+        {/* Upcoming Events Carousel */}
         <View style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             UPCOMING EVENT
           </ThemedText>
-          <TouchableOpacity
-            style={[styles.upcomingCard, { backgroundColor: isDark ? '#2C3E50' : '#34495E' }]}>
-            <View style={styles.eventIconContainer}>
-              <View style={[styles.eventIcon, { backgroundColor: '#B8A072' }]}>
-                <IconSymbol name="calendar" size={28} color="#FFFFFF" />
-              </View>
-            </View>
-            <View style={styles.upcomingEventContent}>
-              <ThemedText style={[styles.upcomingEventTitle, { color: '#FFFFFF' }]}>
-                {upcomingEvent.title}
-              </ThemedText>
-              <ThemedText style={[styles.upcomingEventSubtitle, { color: '#FFFFFF' }]}>
-                {upcomingEvent.subtitle}
-              </ThemedText>
-              <View style={styles.upcomingEventDetails}>
-                <ThemedText style={[styles.upcomingEventDate, { color: '#FFFFFF' }]}>
-                  {upcomingEvent.date}
-                </ThemedText>
-                <ThemedText style={[styles.upcomingEventTime, { color: '#FFFFFF', opacity: 0.8 }]}>
-                  {upcomingEvent.time}
-                </ThemedText>
-              </View>
-            </View>
-          </TouchableOpacity>
+          <UpcomingEventsCarousel events={upcomingEvents} />
         </View>
 
         {/* List of Events Section */}
@@ -150,39 +126,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
   },
-  profileSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  userName: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 14,
-  },
-  avatarContainer: {
-    borderRadius: 30,
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   section: {
     paddingHorizontal: 20,
     marginBottom: 32,
@@ -198,43 +141,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-  upcomingCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 16,
-  },
-  eventIconContainer: {
-    marginBottom: 16,
-  },
-  eventIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upcomingEventContent: {
-    gap: 8,
-  },
-  upcomingEventTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  upcomingEventSubtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  upcomingEventDetails: {
-    marginTop: 8,
-  },
-  upcomingEventDate: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  upcomingEventTime: {
-    fontSize: 14,
-  },
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -242,6 +148,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
+  },
+  eventIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   eventContent: {
     flex: 1,
