@@ -38,15 +38,23 @@ npx eslint <file>  # Lint specific file
 
 ### File-Based Routing
 
-The app uses Expo Router's file-based routing system:
+The app uses Expo Router's file-based routing system with route groups:
 
 - **app/_layout.tsx** - Root layout with theme provider and navigation stack
+- **app/(auth)/_layout.tsx** - Authentication flow layout
+- **app/(auth)/login.tsx** - Login screen (initial route)
 - **app/(tabs)/_layout.tsx** - Tab navigation layout
 - **app/(tabs)/index.tsx** - Home screen
 - **app/(tabs)/explore.tsx** - Explore screen
-- **app/modal.tsx** - Modal screen example
 
-The `unstable_settings.anchor` in [app/_layout.tsx](app/_layout.tsx) is set to `'(tabs)'`, making tabs the default initial route.
+The `unstable_settings.anchor` in [app/_layout.tsx](app/_layout.tsx) is set to `'(auth)/login'`, making the login screen the default initial route.
+
+#### Authentication Flow
+
+The app implements a simple auth flow:
+- Login screen (`/(auth)/login`) is the entry point
+- After successful login, users navigate to `/(tabs)` using `router.replace()`
+- Logout navigates back to `/(auth)/login`
 
 ### Path Aliases
 
@@ -85,11 +93,15 @@ The codebase uses platform-specific file extensions:
 
 ### Component Organization
 
-- **components/** - Reusable components (themed-text, themed-view, external-link, etc.)
-- **components/ui/** - UI primitives (icon-symbol, collapsible)
+- **components/** - Reusable components (themed-text, themed-view)
+- **components/ui/** - UI primitives (icon-symbol, optom-logo)
 - **components/haptic-tab.tsx** - Custom tab component with haptic feedback
 - **hooks/** - Custom React hooks
 - **constants/** - Theme constants and configuration
+
+### Key Dependencies
+
+- **react-native-svg** - For SVG support (Optom logo)
 
 ## Configuration Files
 
