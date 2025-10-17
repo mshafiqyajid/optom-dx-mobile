@@ -129,6 +129,8 @@ export default function CheckpointScreen() {
                     router.push(`/history-taking/${id}`);
                   } else if (step.title === 'Preliminary Test') {
                     router.push(`/preliminary-test/${id}`);
+                  } else if (step.title === 'Visual Acuity Assessment') {
+                    router.push(`/visual-acuity/${id}`);
                   }
                 }}>
                 <View style={styles.stepCardContent}>
