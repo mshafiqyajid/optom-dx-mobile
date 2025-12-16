@@ -1,12 +1,12 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DesignColors, Spacing, BorderRadius, Typography, IconSizes } from '@/constants/design-system';
-import { Layout, getThemedColors } from '@/constants/styles';
+import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { MOCK_PATIENTS } from '@/constants/patient';
+import { Layout, getThemedColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -33,21 +33,24 @@ export default function EventDetailsScreen() {
             SCHOOL EYE SCREENING -{'\n'}SK TAMAN PUTRA
           </ThemedText>
 
-          <View style={styles.infoRow}>
-            <IconSymbol name="calendar" size={IconSizes.sm} color={colors.textSecondary} />
-            <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-              03 August 2025
-            </ThemedText>
+          {/* Date and Time Row */}
+          <View style={styles.dateTimeRow}>
+            <View style={styles.infoItem}>
+              <IconSymbol name="calendar" size={IconSizes.sm} color={colors.textSecondary} />
+              <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
+                03 August 2025
+              </ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <IconSymbol name="clock" size={IconSizes.sm} color={colors.textSecondary} />
+              <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
+                9.00AM to 5.00PM
+              </ThemedText>
+            </View>
           </View>
 
-          <View style={styles.infoRow}>
-            <IconSymbol name="clock" size={IconSizes.sm} color={colors.textSecondary} />
-            <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-              9.00AM to 5.00PM
-            </ThemedText>
-          </View>
-
-          <View style={styles.infoRow}>
+          {/* Location Row */}
+          <View style={styles.infoItem}>
             <IconSymbol name="mappin" size={IconSizes.sm} color={colors.textSecondary} />
             <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
               Dewan Seri Putra, SK Taman Putra, Putrajaya
@@ -57,7 +60,7 @@ export default function EventDetailsScreen() {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.searchBar, { borderColor: colors.border }]}>
             <IconSymbol name="magnifyingglass" size={IconSizes.sm} color={colors.textSecondary} />
             <TextInput
               placeholder="Search Patient's Name or Ref No."
@@ -89,8 +92,8 @@ export default function EventDetailsScreen() {
           {MOCK_PATIENTS.map((patient) => (
             <TouchableOpacity
               key={patient.id}
-              style={[styles.patientCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => router.push(`/checkpoint/${patient.id}`)}>
+              style={[styles.patientCard, { borderColor: colors.border }]}
+              onPress={() => router.push(`/profile/${patient.id}`)}>
               <View style={[styles.patientAvatar, { backgroundColor: colors.border }]}>
                 <IconSymbol name="person" size={IconSizes.md} color={colors.icon} />
               </View>
@@ -144,16 +147,23 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.bold,
     marginBottom: Spacing.lg,
     lineHeight: Typography.fontSize.lg * 1.4,
+    textAlign: 'center',
   },
-  infoRow: {
+  dateTimeRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.md,
+    gap: Spacing.xl,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.sm,
   },
   infoText: {
     fontSize: Typography.fontSize.base,
-    flex: 1,
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,

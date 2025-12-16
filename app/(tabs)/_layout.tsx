@@ -69,6 +69,12 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabBarIcon name="star.fill" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

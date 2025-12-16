@@ -18,6 +18,8 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/guardian/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="checkpoint/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="history-taking/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="preliminary-test/[id]" options={{ headerShown: false }} />
