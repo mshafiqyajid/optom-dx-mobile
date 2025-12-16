@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
 import { OptomLogo } from '@/components/ui/optom-logo';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -32,14 +33,14 @@ export default function LoginScreen() {
         <View style={styles.content}>
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <OptomLogo width={80} height={80} color="#B8A072" />
+            <OptomLogo height={200} width={200} />
           </View>
 
           {/* Title */}
           <Text style={[styles.title, { color: isDark ? '#ECEDEE' : '#1E3A5F' }]}>OPTOM DX</Text>
 
           {/* Description */}
-          <Text style={[styles.description, { color: isDark ? '#9BA1A6' : '#687076' }]}>
+          <Text style={[styles.description, { color: isDark ? '#ECEDEE' : '#11181C' }]}>
             AI-driven solution enables seamless remote eye check-ups, streamlining patient data
             management and supporting AI-driven eye health advancements.
           </Text>
@@ -47,39 +48,42 @@ export default function LoginScreen() {
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: isDark ? '#ECEDEE' : '#11181C' }]}>Email</Text>
-            <TextInput
+            <View
               style={[
-                styles.input,
+                styles.inputWrapper,
                 {
                   backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                  color: isDark ? '#ECEDEE' : '#11181C',
                   borderColor: isDark ? '#2A2A2A' : '#E0E0E0',
                 },
-              ]}
-              placeholder="Please insert your email"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
+              ]}>
+              <Feather name="mail" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
+              <TextInput
+                style={[styles.input, { color: isDark ? '#ECEDEE' : '#11181C' }]}
+                placeholder="Please insert your email"
+                placeholderTextColor={isDark ? '#666' : '#999'}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
           </View>
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: isDark ? '#ECEDEE' : '#11181C' }]}>Password</Text>
-            <View style={styles.passwordContainer}>
+            <View
+              style={[
+                styles.inputWrapper,
+                {
+                  backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
+                  borderColor: isDark ? '#2A2A2A' : '#E0E0E0',
+                },
+              ]}>
+              <Feather name="lock" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
               <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  {
-                    backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                    color: isDark ? '#ECEDEE' : '#11181C',
-                    borderColor: isDark ? '#2A2A2A' : '#E0E0E0',
-                  },
-                ]}
+                style={[styles.input, { color: isDark ? '#ECEDEE' : '#11181C', flex: 1 }]}
                 placeholder="••••••••••"
                 placeholderTextColor={isDark ? '#666' : '#999'}
                 value={password}
@@ -88,12 +92,12 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 autoComplete="password"
               />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}>
-                <Text style={{ color: isDark ? '#9BA1A6' : '#687076', fontSize: 20 }}>
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </Text>
+              <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+                <Feather
+                  name={showPassword ? 'eye' : 'eye-off'}
+                  size={20}
+                  color={isDark ? '#9BA1A6' : '#687076'}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -142,8 +146,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   description: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 26,
     textAlign: 'center',
     marginBottom: 48,
     paddingHorizontal: 8,
@@ -156,23 +160,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 56,
     borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
     borderWidth: 1,
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 50,
+  input: {
+    flex: 1,
+    height: 56,
+    fontSize: 16,
   },
   eyeIcon: {
-    position: 'absolute',
-    right: 16,
-    top: 16,
     padding: 4,
   },
   forgotPassword: {
