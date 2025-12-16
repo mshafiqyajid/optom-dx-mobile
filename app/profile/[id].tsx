@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
+import { BorderRadius, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Feather } from '@expo/vector-icons';
@@ -111,8 +111,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
+   headerTitle: {
     fontWeight: Typography.fontWeight.bold,
   },
   content: {

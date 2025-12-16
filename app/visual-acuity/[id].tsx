@@ -1,12 +1,12 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DesignColors, Spacing, BorderRadius, Typography, IconSizes } from '@/constants/design-system';
+import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function VisualAcuityScreen() {
   const { id } = useLocalSearchParams();
@@ -441,8 +441,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
+   headerTitle: {
     fontWeight: Typography.fontWeight.bold,
   },
   content: {

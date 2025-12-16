@@ -1,12 +1,12 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DesignColors, Spacing, BorderRadius, Typography, IconSizes } from '@/constants/design-system';
+import { CheckpointStep, CheckpointStepStatus } from '@/constants/checkpoint';
+import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
-import { CheckpointStepStatus, CheckpointStep } from '@/constants/checkpoint';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 // Mock checkpoint steps data - replace with real data from API
 const getMockCheckpointSteps = (): CheckpointStep[] => [
@@ -189,8 +189,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
+   headerTitle: {
     fontWeight: Typography.fontWeight.bold,
   },
   registrationInfo: {

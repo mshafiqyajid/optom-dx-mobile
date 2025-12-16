@@ -134,8 +134,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
+   headerTitle: {
     fontWeight: Typography.fontWeight.bold,
   },
   eventInfo: {
