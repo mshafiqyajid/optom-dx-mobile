@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -9,14 +10,17 @@ export interface StatusBadgeProps {
   online?: boolean;
 }
 
-export function StatusBadge({ text, color, online = true }: StatusBadgeProps) {
+export const StatusBadge = memo(function StatusBadge({ text, color, online = true }: StatusBadgeProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const statusColor = color || (online ? DesignColors.success : '#999999');
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessibilityLabel={`Status: ${text}`}
+      accessibilityRole="text">
       <View style={[styles.dot, { backgroundColor: statusColor }]} />
       <ThemedText
         style={[
@@ -27,7 +31,7 @@ export function StatusBadge({ text, color, online = true }: StatusBadgeProps) {
       </ThemedText>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

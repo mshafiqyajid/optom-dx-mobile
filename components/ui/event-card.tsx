@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -14,7 +15,7 @@ export interface EventCardProps {
   onMenuPress?: () => void;
 }
 
-export function EventCard({
+export const EventCard = memo(function EventCard({
   title,
   subtitle,
   date,
@@ -33,7 +34,10 @@ export function EventCard({
           styles.upcomingCard,
           { backgroundColor: isDark ? DesignColors.eventCard.backgroundDark : DesignColors.eventCard.background },
         ]}
-        onPress={onPress}>
+        onPress={onPress}
+        accessibilityLabel={`Upcoming event: ${title}${subtitle ? `, ${subtitle}` : ''}, ${date}${time ? ` at ${time}` : ''}`}
+        accessibilityRole="button"
+        accessibilityHint="Double tap to view event details">
         <View style={styles.eventIconContainer}>
           <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
             <IconSymbol name="calendar" size={IconSizes.lg} color="#FFFFFF" />
@@ -68,7 +72,10 @@ export function EventCard({
           borderColor: isDark ? DesignColors.dark.border : DesignColors.light.border,
         },
       ]}
-      onPress={onPress}>
+      onPress={onPress}
+      accessibilityLabel={`Event: ${title}, ${date}`}
+      accessibilityRole="button"
+      accessibilityHint="Double tap to view event details">
       <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
         <IconSymbol name="calendar" size={IconSizes.md} color="#FFFFFF" />
       </View>
@@ -85,7 +92,11 @@ export function EventCard({
         </ThemedText>
       </View>
       {onMenuPress && (
-        <TouchableOpacity style={styles.eventMenu} onPress={onMenuPress}>
+        <TouchableOpacity
+          style={styles.eventMenu}
+          onPress={onMenuPress}
+          accessibilityLabel={`More options for ${title}`}
+          accessibilityRole="button">
           <IconSymbol
             name="ellipsis"
             size={IconSizes.sm}
@@ -95,7 +106,7 @@ export function EventCard({
       )}
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // Upcoming variant styles

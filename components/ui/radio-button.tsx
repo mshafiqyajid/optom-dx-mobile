@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -11,7 +12,7 @@ export interface RadioButtonProps {
   disabled?: boolean;
 }
 
-export function RadioButton({ label, selected, onPress, disabled = false }: RadioButtonProps) {
+export const RadioButton = memo(function RadioButton({ label, selected, onPress, disabled = false }: RadioButtonProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
@@ -40,7 +41,7 @@ export function RadioButton({ label, selected, onPress, disabled = false }: Radi
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   radioButton: {

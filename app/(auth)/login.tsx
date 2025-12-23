@@ -1,5 +1,6 @@
 import { OptomLogo } from '@/components/ui/optom-logo';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useFormState, ValidationHelpers } from '@/hooks/use-form-state';
 import { useLogin } from '@/services/auth/store.auth';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -17,27 +18,46 @@ import {
   View,
 } from 'react-native';
 
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   const loginMutation = useLogin();
 
+  const { values, errors, setValue, validate, touched, setFieldTouched } = useFormState<LoginFormValues>({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationRules: {
+      email: [
+        ValidationHelpers.required('Please enter your email'),
+        ValidationHelpers.email('Please enter a valid email address'),
+      ],
+      password: [
+        ValidationHelpers.required('Please enter your password'),
+        ValidationHelpers.minLength(6, 'Password must be at least 6 characters'),
+      ],
+    },
+  });
+
   const handleLogin = () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email');
-      return;
-    }
-    if (!password.trim()) {
-      Alert.alert('Error', 'Please enter your password');
+    // Mark all fields as touched to show errors
+    setFieldTouched('email');
+    setFieldTouched('password');
+
+    if (!validate()) {
       return;
     }
 
     loginMutation.mutate(
-      { email: email.trim(), password },
+      { email: values.email.trim(), password: values.password },
       {
         onError: (error: Error & { response?: { data?: { message?: string } } }) => {
           const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
@@ -79,7 +99,7 @@ export default function LoginScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                  borderColor: isDark ? '#2A2A2A' : '#E0E0E0',
+                  borderColor: touched.email && errors.email ? '#FF3B30' : isDark ? '#2A2A2A' : '#E0E0E0',
                 },
               ]}>
               <Feather name="mail" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
@@ -87,13 +107,19 @@ export default function LoginScreen() {
                 style={[styles.input, { color: isDark ? '#ECEDEE' : '#11181C' }]}
                 placeholder="Please insert your email"
                 placeholderTextColor={isDark ? '#666' : '#999'}
-                value={email}
-                onChangeText={setEmail}
+                value={values.email}
+                onChangeText={(text) => setValue('email', text)}
+                onBlur={() => setFieldTouched('email')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                accessibilityLabel="Email address"
+                accessibilityHint="Enter your email to login"
               />
             </View>
+            {touched.email && errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
 
           {/* Password Input */}
@@ -104,7 +130,7 @@ export default function LoginScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                  borderColor: isDark ? '#2A2A2A' : '#E0E0E0',
+                  borderColor: touched.password && errors.password ? '#FF3B30' : isDark ? '#2A2A2A' : '#E0E0E0',
                 },
               ]}>
               <Feather name="lock" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
@@ -112,13 +138,20 @@ export default function LoginScreen() {
                 style={[styles.input, { color: isDark ? '#ECEDEE' : '#11181C', flex: 1 }]}
                 placeholder="••••••••••"
                 placeholderTextColor={isDark ? '#666' : '#999'}
-                value={password}
-                onChangeText={setPassword}
+                value={values.password}
+                onChangeText={(text) => setValue('password', text)}
+                onBlur={() => setFieldTouched('password')}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoComplete="password"
+                accessibilityLabel="Password"
+                accessibilityHint="Enter your password to login"
               />
-              <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityRole="button">
                 <Feather
                   name={showPassword ? 'eye' : 'eye-off'}
                   size={20}
@@ -126,6 +159,9 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
+            {touched.password && errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
           </View>
 
           {/* Forgot Password */}
@@ -194,6 +230,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
   },
   inputWrapper: {
     flexDirection: 'row',

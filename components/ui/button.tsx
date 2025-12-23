@@ -79,7 +79,11 @@ export function Button({
         },
       ]}
       onPress={onPress}
-      disabled={disabled || loading}>
+      disabled={disabled || loading}
+      accessibilityLabel={title}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
+      accessibilityHint={loading ? 'Loading, please wait' : undefined}>
       {loading ? (
         <ActivityIndicator color="#FFFFFF" />
       ) : (
