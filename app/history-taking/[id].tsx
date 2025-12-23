@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function HistoryTakingScreen() {
-  const { id } = useLocalSearchParams();
+  const { id: _id } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';

@@ -1,17 +1,31 @@
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuthStore } from '@/store/auth-store';
+import { useLogout } from '@/services/auth/store.auth';
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
+  const { user } = useAuthStore();
+  const logoutMutation = useLogout();
+
   const handleLogout = () => {
-    // @ts-ignore - auth route exists but not in typed routes yet
-    router.replace('/(auth)/login');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logoutMutation.mutate(),
+        },
+      ]
+    );
   };
 
   return (
@@ -22,16 +36,23 @@ export default function ProfileScreen() {
         </View>
 
         <ThemedText type="title" style={styles.title}>
-          Ahmad Zaki
+          {user?.name || 'User'}
         </ThemedText>
         <ThemedText style={styles.subtitle}>
-          Operator
+          {user?.email || 'No email'}
         </ThemedText>
 
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <ThemedText type="defaultSemiBold" style={styles.logoutText}>
-            Logout
-          </ThemedText>
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={[styles.logoutButton, logoutMutation.isPending && styles.logoutButtonDisabled]}
+          disabled={logoutMutation.isPending}>
+          {logoutMutation.isPending ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <ThemedText type="defaultSemiBold" style={styles.logoutText}>
+              Logout
+            </ThemedText>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -71,5 +92,8 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FFFFFF',
+  },
+  logoutButtonDisabled: {
+    opacity: 0.7,
   },
 });

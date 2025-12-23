@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function VisualAcuityScreen() {
-  const { id } = useLocalSearchParams();
+  const { id: _id } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -350,7 +350,7 @@ export default function VisualAcuityScreen() {
 
             <View style={styles.questionContent}>
               <View style={styles.questionContainer}>
-                <ThemedText style={styles.questionLabel}>Operator's Observation</ThemedText>
+                <ThemedText style={styles.questionLabel}>Operator&apos;s Observation</ThemedText>
 
                 <TextInput
                   placeholder="Add remarks here"

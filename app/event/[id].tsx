@@ -6,14 +6,56 @@ import { MOCK_PATIENTS } from '@/constants/patient';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useGetEventById } from '@/services/events/store.events';
+import { formatDate, formatTimeRange, formatLocation } from '@/utils/date';
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams();
+  const eventId = Number(id);
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
+
+  const { data: eventData, isLoading, error } = useGetEventById(eventId);
+  const event = eventData?.data;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Event</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+        </View>
+      </ThemedView>
+    );
+  }
+
+  // Show error state
+  if (error || !event) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Event</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ThemedText style={{ color: colors.textSecondary }}>Failed to load event</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={Layout.container}>
@@ -30,7 +72,7 @@ export default function EventDetailsScreen() {
         {/* Event Info */}
         <View style={styles.eventInfo}>
           <ThemedText style={styles.eventTitle}>
-            SCHOOL EYE SCREENING -{'\n'}SK TAMAN PUTRA
+            {event.category.toUpperCase()} -{'\n'}{event.title.toUpperCase()}
           </ThemedText>
 
           {/* Date and Time Row */}
@@ -38,13 +80,13 @@ export default function EventDetailsScreen() {
             <View style={styles.infoItem}>
               <IconSymbol name="calendar" size={IconSizes.sm} color={colors.textSecondary} />
               <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-                03 August 2025
+                {formatDate(event.start_date)}
               </ThemedText>
             </View>
             <View style={styles.infoItem}>
               <IconSymbol name="clock" size={IconSizes.sm} color={colors.textSecondary} />
               <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-                9.00AM to 5.00PM
+                {formatTimeRange(event.start_date, event.end_date)}
               </ThemedText>
             </View>
           </View>
@@ -53,7 +95,7 @@ export default function EventDetailsScreen() {
           <View style={styles.infoItem}>
             <IconSymbol name="mappin" size={IconSizes.sm} color={colors.textSecondary} />
             <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
-              Dewan Seri Putra, SK Taman Putra, Putrajaya
+              {formatLocation(event)}
             </ThemedText>
           </View>
         </View>
@@ -254,6 +296,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

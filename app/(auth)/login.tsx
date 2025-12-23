@@ -1,10 +1,21 @@
 import { OptomLogo } from '@/components/ui/optom-logo';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLogin } from '@/services/auth/store.auth';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,12 +24,27 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log('Login with:', email, password);
+  const loginMutation = useLogin();
 
-    // Navigate to the main app (tabs)
-    router.replace('/(tabs)');
+  const handleLogin = () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
+    loginMutation.mutate(
+      { email: email.trim(), password },
+      {
+        onError: (error: Error & { response?: { data?: { message?: string } } }) => {
+          const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+          Alert.alert('Login Failed', message);
+        },
+      }
+    );
   };
 
   return (
@@ -111,9 +137,18 @@ export default function LoginScreen() {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: '#1E3A5F' }]}
-            onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Login</Text>
+            style={[
+              styles.loginButton,
+              { backgroundColor: '#1E3A5F' },
+              loginMutation.isPending && styles.loginButtonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.loginButtonText}>Login</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -195,5 +230,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
 });

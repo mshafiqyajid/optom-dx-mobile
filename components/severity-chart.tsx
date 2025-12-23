@@ -2,8 +2,6 @@ import { View, StyleSheet, Dimensions, TextInput } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import { ThemedText } from './themed-text';
 import { Spacing, Typography } from '@/constants/design-system';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { getThemedColors } from '@/constants/styles';
 
 interface SeverityChartProps {
   value: number; // 1-10
@@ -12,10 +10,6 @@ interface SeverityChartProps {
 }
 
 export function SeverityChart({ value, maxValue = 10, onValueChange }: SeverityChartProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const colors = getThemedColors(isDark);
-
   const width = Dimensions.get('window').width - Spacing.lg * 4;
   const size = Math.min(width, 280);
   const strokeWidth = 32;

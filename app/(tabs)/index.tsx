@@ -1,4 +1,4 @@
-import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -8,54 +8,24 @@ import { UpcomingEventsCarousel } from '@/components/ui/upcoming-events-carousel
 import { UserProfileHeader } from '@/components/ui/user-profile-header';
 import { DesignColors, Spacing, IconSizes } from '@/constants/design-system';
 import { Layout, Cards, getThemedColors } from '@/constants/styles';
+import { useGetEvents, EventStatus } from '@/services';
+import { useAuthStore } from '@/store/auth-store';
+import { formatEventDateTime, getCarouselDateInfo } from '@/utils/date';
+import type { EventListItem } from '@/services/events/type.events';
 
-// Mock data - replace with real data later
-const upcomingEvents = [
-  {
-    id: 1,
-    title: 'School Eye Screening –',
-    subtitle: 'SK Taman Putra',
-    date: 'Monday, 04 August 2025',
-    time: '09:00am - 12:30pm',
-  },
-  {
-    id: 2,
-    title: 'Community Eye Screening –',
-    subtitle: 'Putrajaya Precinct 11',
-    date: 'Thursday, 05 August 2025',
-    time: '08:00am - 4:00pm',
-  },
-  {
-    id: 3,
-    title: 'Corporate Screening –',
-    subtitle: 'Tenaga Nasional HQ',
-    date: 'Friday, 10 August 2025',
-    time: '10:00am - 4:00pm',
-  },
-];
+// Transform API event to carousel format
+const transformToCarouselEvent = (event: EventListItem) => {
+  const startInfo = getCarouselDateInfo(event.start_date);
+  const endInfo = getCarouselDateInfo(event.end_date);
 
-const eventsList = [
-  {
-    id: 1,
-    title: 'COMMUNITY EYE SCREENING – PUTRAJAYA PRECINCT 11',
-    date: '05 AUG 2025, 10:00 AM – 4:00 PM',
-  },
-  {
-    id: 2,
-    title: 'SCHOOL EYE SCREENING – SK TAMAN PUTRA',
-    date: '03 AUG 2025, 09:00 AM – 12:30 PM',
-  },
-  {
-    id: 3,
-    title: 'SCHOOL EYE SCREENING – SMK BUKIT INDAH',
-    date: '10 AUG 2025, 9:00 AM – 4:00 PM',
-  },
-  {
-    id: 4,
-    title: 'CORPORATE SCREENING – TENAGA NASIONAL HQ',
-    date: '05 AUG 2025, 10:00 AM – 4:00 PM',
-  },
-];
+  return {
+    id: event.id,
+    title: `${event.category} –`,
+    subtitle: event.title,
+    date: `${startInfo.day}, ${startInfo.date}`,
+    time: `${startInfo.time} - ${endInfo.time}`,
+  };
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -63,16 +33,51 @@ export default function HomeScreen() {
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  const { user } = useAuthStore();
+
+  // Fetch upcoming events (status = Upcoming)
+  const {
+    data: upcomingEventsData,
+    isLoading: isLoadingUpcoming,
+    refetch: refetchUpcoming,
+  } = useGetEvents({ status: EventStatus.UPCOMING, per_page: 5 });
+
+  // Fetch all events for the list
+  const {
+    data: allEventsData,
+    isLoading: isLoadingAll,
+    refetch: refetchAll,
+  } = useGetEvents({ per_page: 10 });
+
+  const isLoading = isLoadingUpcoming || isLoadingAll;
+  const upcomingEvents = upcomingEventsData?.data?.data || [];
+  const eventsList = allEventsData?.data?.data || [];
+
+  const onRefresh = () => {
+    refetchUpcoming();
+    refetchAll();
+  };
+
   const handleEventPress = (eventId: number) => {
     router.push(`/event/${eventId}`);
   };
 
   return (
     <ThemedView style={Layout.container}>
-      <ScrollView style={Layout.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={Layout.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={colors.text} />
+        }>
         {/* Header with Profile */}
         <View style={styles.header}>
-          <UserProfileHeader name="Ahmad Zaki" role="Operator" online={true} size="medium" />
+          <UserProfileHeader
+            name={user?.name || 'User'}
+            role="Operator"
+            online={true}
+            size="medium"
+          />
         </View>
 
         {/* Upcoming Events Carousel */}
@@ -80,12 +85,22 @@ export default function HomeScreen() {
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             UPCOMING EVENT
           </ThemedText>
-          <UpcomingEventsCarousel
-            events={upcomingEvents.map((event) => ({
-              ...event,
-              onPress: () => handleEventPress(event.id),
-            }))}
-          />
+          {isLoadingUpcoming ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={DesignColors.primary} />
+            </View>
+          ) : upcomingEvents.length > 0 ? (
+            <UpcomingEventsCarousel
+              events={upcomingEvents.map((event) => ({
+                ...transformToCarouselEvent(event),
+                onPress: () => handleEventPress(event.id),
+              }))}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={{ color: colors.textSecondary }}>No upcoming events</ThemedText>
+            </View>
+          )}
         </View>
 
         {/* List of Events Section */}
@@ -99,32 +114,42 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {eventsList.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              style={[styles.eventItem, Cards.base(isDark)]}
-              onPress={() => handleEventPress(event.id)}>
-              <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
-                <IconSymbol name="calendar" size={IconSizes.md} color="#FFFFFF" />
-              </View>
-              <View style={styles.eventContent}>
-                <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
-                  {event.title}
-                </ThemedText>
-                <ThemedText style={[styles.eventDate, { color: colors.textSecondary }]}>
-                  {event.date}
-                </ThemedText>
-              </View>
+          {isLoadingAll ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={DesignColors.primary} />
+            </View>
+          ) : eventsList.length > 0 ? (
+            eventsList.map((event) => (
               <TouchableOpacity
-                style={styles.eventMenu}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  // Handle menu press
-                }}>
-                <IconSymbol name="ellipsis" size={IconSizes.sm} color={colors.icon} />
+                key={event.id}
+                style={[styles.eventItem, Cards.base(isDark)]}
+                onPress={() => handleEventPress(event.id)}>
+                <View style={[styles.eventIcon, { backgroundColor: DesignColors.accent }]}>
+                  <IconSymbol name="calendar" size={IconSizes.md} color="#FFFFFF" />
+                </View>
+                <View style={styles.eventContent}>
+                  <ThemedText type="defaultSemiBold" style={styles.eventTitle}>
+                    {`${event.category.toUpperCase()} – ${event.title.toUpperCase()}`}
+                  </ThemedText>
+                  <ThemedText style={[styles.eventDate, { color: colors.textSecondary }]}>
+                    {formatEventDateTime(event.start_date, event.end_date)}
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={styles.eventMenu}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    // Handle menu press
+                  }}>
+                  <IconSymbol name="ellipsis" size={IconSizes.sm} color={colors.icon} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={{ color: colors.textSecondary }}>No events found</ThemedText>
+            </View>
+          )}
         </View>
 
         {/* Add some bottom padding */}
@@ -171,5 +196,15 @@ const styles = StyleSheet.create({
   },
   eventMenu: {
     padding: Spacing.sm,
+  },
+  loadingContainer: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

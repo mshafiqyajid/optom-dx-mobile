@@ -3,7 +3,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DesignColors, ComponentSizes, Spacing } from '@/constants/design-system';
+import { DesignColors, ComponentSizes } from '@/constants/design-system';
 
 export interface UserProfileHeaderProps {
   name: string;
