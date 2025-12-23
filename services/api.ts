@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/auth-store';
 import { router } from 'expo-router';
 
-// API Base URL - same as frontend
-const API_BASE_URL = 'http://54.179.79.104:8080/api';
+// API Base URL - uses environment variable with fallback
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

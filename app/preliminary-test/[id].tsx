@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -47,34 +48,6 @@ export default function PreliminaryTestScreen() {
       router.back();
     }
   };
-
-  const RadioButton = ({
-    label,
-    selected,
-    onPress,
-  }: {
-    label: string;
-    selected: boolean;
-    onPress: () => void;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.radioButton,
-        {
-          borderColor: selected ? DesignColors.primary : colors.border,
-        },
-      ]}
-      onPress={onPress}>
-      <ThemedText style={styles.radioLabel}>{label}</ThemedText>
-      <View
-        style={[
-          styles.radioCircle,
-          { borderColor: selected ? DesignColors.primary : '#CCCCCC' },
-        ]}>
-        {selected && <View style={[styles.radioCircleInner, { backgroundColor: DesignColors.primary }]} />}
-      </View>
-    </TouchableOpacity>
-  );
 
   const renderStep = () => {
     switch (currentStep) {
@@ -442,33 +415,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.medium,
     marginBottom: Spacing.md,
-  },
-  radioButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    marginBottom: Spacing.sm,
-  },
-  radioLabel: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.medium,
-  },
-  radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioCircleInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   bottomContainer: {
     position: 'absolute',
