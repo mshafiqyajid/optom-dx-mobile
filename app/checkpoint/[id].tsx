@@ -1,52 +1,13 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { CheckpointStep, CheckpointStepStatus } from '@/constants/checkpoint';
+import { CheckpointStepStatus } from '@/constants/checkpoint';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
+import { getMockCheckpointSteps } from '@/constants/mock-data';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-
-// Mock checkpoint steps data - replace with real data from API
-const getMockCheckpointSteps = (): CheckpointStep[] => [
-  {
-    id: 1,
-    title: 'Profile Verification',
-    status: CheckpointStepStatus.COMPLETED,
-    completedAt: 'Aug 04, 2025 at 10.00 AM',
-  },
-  {
-    id: 2,
-    title: 'History Taking',
-    status: CheckpointStepStatus.PENDING,
-  },
-  {
-    id: 3,
-    title: 'Preliminary Test',
-    status: CheckpointStepStatus.PENDING,
-  },
-  {
-    id: 4,
-    title: 'Visual Acuity Assessment',
-    status: CheckpointStepStatus.PENDING,
-  },
-  {
-    id: 5,
-    title: 'External Eye Examination',
-    status: CheckpointStepStatus.PENDING,
-  },
-  {
-    id: 6,
-    title: 'Refraction Assessment',
-    status: CheckpointStepStatus.PENDING,
-  },
-  {
-    id: 7,
-    title: 'Referral & Case Submission',
-    status: CheckpointStepStatus.PENDING,
-  },
-];
 
 export default function CheckpointScreen() {
   const { id } = useLocalSearchParams();

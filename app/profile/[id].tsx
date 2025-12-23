@@ -2,21 +2,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BorderRadius, IconSizes, Spacing, Typography } from '@/constants/design-system';
+import { MOCK_PATIENT_DETAILS } from '@/constants/mock-data';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-
-// Mock patient details - replace with real data
-const PATIENT_DETAILS = {
-  name: 'Nur Aisyah binti Rahman',
-  dateOfBirth: '15/03/2018',
-  age: '7 years old',
-  gender: 'Female',
-  classGrade: 'Standard 1 ( Class B)',
-  schoolName: 'SK Taman Putra, Putrajaya',
-};
 
 function InfoField({
   label,
@@ -71,12 +62,12 @@ export default function PatientProfileScreen() {
             </View>
 
             <View style={styles.sectionContent}>
-              <InfoField label="Patient Name" value={PATIENT_DETAILS.name} icon="user" colors={colors} />
-              <InfoField label="Date of Birth" value={PATIENT_DETAILS.dateOfBirth} icon="calendar" colors={colors} />
-              <InfoField label="Age" value={PATIENT_DETAILS.age} icon="user" colors={colors} />
-              <InfoField label="Gender" value={PATIENT_DETAILS.gender} icon="user" colors={colors} />
-              <InfoField label="Class/Grade" value={PATIENT_DETAILS.classGrade} icon="home" colors={colors} />
-              <InfoField label="School Name" value={PATIENT_DETAILS.schoolName} icon="home" colors={colors} />
+              <InfoField label="Patient Name" value={MOCK_PATIENT_DETAILS.name} icon="user" colors={colors} />
+              <InfoField label="Date of Birth" value={MOCK_PATIENT_DETAILS.dateOfBirth} icon="calendar" colors={colors} />
+              <InfoField label="Age" value={MOCK_PATIENT_DETAILS.age} icon="user" colors={colors} />
+              <InfoField label="Gender" value={MOCK_PATIENT_DETAILS.gender} icon="user" colors={colors} />
+              <InfoField label="Class/Grade" value={MOCK_PATIENT_DETAILS.classGrade} icon="home" colors={colors} />
+              <InfoField label="School Name" value={MOCK_PATIENT_DETAILS.schoolName} icon="home" colors={colors} />
             </View>
           </View>
         </View>
