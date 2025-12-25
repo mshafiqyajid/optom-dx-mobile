@@ -7,8 +7,9 @@ export interface PaginationLinks {
   active: boolean;
 }
 
-export interface PaginatedData {
+export interface PaginatedData<T = unknown> {
   current_page: number;
+  data: T[];
   first_page_url: string;
   from: number;
   last_page: number;

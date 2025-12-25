@@ -19,3 +19,18 @@ export type * from './auth/type.auth';
 export { default as eventsAPIs } from './events/api.events';
 export * from './events/store.events';
 export type * from './events/type.events';
+
+// Patients Service
+export { default as patientsAPIs } from './patients/api.patients';
+export * from './patients/store.patients';
+export type * from './patients/type.patients';
+
+// Registrations Service
+export { default as registrationsAPIs } from './registrations/api.registrations';
+export * from './registrations/store.registrations';
+export type * from './registrations/type.registrations';
+
+// Assessments Service
+export { default as assessmentsAPIs } from './assessments/api.assessments';
+export * from './assessments/store.assessments';
+export type * from './assessments/type.assessments';
