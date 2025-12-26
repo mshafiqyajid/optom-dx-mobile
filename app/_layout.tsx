@@ -23,6 +23,9 @@ export default function RootLayout() {
           <Stack.Screen name="history-taking/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="preliminary-test/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="visual-acuity/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="external-eye/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="refraction/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="case-submission/[id]" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
