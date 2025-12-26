@@ -5,42 +5,144 @@ import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGetVisualAcuityAssessment, useCreateOrUpdateVisualAcuityAssessment } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+// Visual Acuity description data structure
+interface VisualAcuityDescription {
+  screening_details: {
+    distance_chart: string;
+    screening_distance: string;
+  };
+  distance_vision_with_spectacle: {
+    right_eye: { denominator: string; minus: string };
+    left_eye: { denominator: string; minus: string };
+  };
+  distance_vision_unaided: {
+    right_eye: { denominator: string };
+    left_eye: { denominator: string };
+  };
+  distance_vision_pinhole: {
+    right_eye: { denominator: string };
+    left_eye: { denominator: string };
+  };
+  near_vision: {
+    operator_observation: string;
+    result: 'pass' | 'refer' | null;
+  };
+}
 
 export default function VisualAcuityScreen() {
-  const { id: _id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
+
+  // API hooks
+  const { data, isLoading: isFetching } = useGetVisualAcuityAssessment(registrationId);
+  const { mutate: saveVisualAcuity, isPending: isSaving } = useCreateOrUpdateVisualAcuityAssessment();
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Step 1: Screening Details - Distance Visual Acuity Chart
-  const [distanceChart, setDistanceChart] = useState<string>('snellen');
+  const [distanceChart, setDistanceChart] = useState<string>('');
 
   // Step 2: Vision Screening Distance
-  const [screeningDistance, setScreeningDistance] = useState<string>('1.5');
+  const [screeningDistance, setScreeningDistance] = useState<string>('');
 
   // Step 3: Distance Vision - With Spectacle
-  const [distanceRightDenominator, setDistanceRightDenominator] = useState('9');
-  const [distanceRightMinus, setDistanceRightMinus] = useState('-6');
-  const [distanceLeftDenominator, setDistanceLeftDenominator] = useState('9');
-  const [distanceLeftMinus, setDistanceLeftMinus] = useState('-6');
+  const [distanceRightDenominator, setDistanceRightDenominator] = useState('');
+  const [distanceRightMinus, setDistanceRightMinus] = useState('');
+  const [distanceLeftDenominator, setDistanceLeftDenominator] = useState('');
+  const [distanceLeftMinus, setDistanceLeftMinus] = useState('');
 
   // Step 4: Distance Vision - Un-Aided
-  const [unaidedRightDenominator, setUnaidedRightDenominator] = useState('6');
-  const [unaidedLeftDenominator, setUnaidedLeftDenominator] = useState('6');
+  const [unaidedRightDenominator, setUnaidedRightDenominator] = useState('');
+  const [unaidedLeftDenominator, setUnaidedLeftDenominator] = useState('');
 
   // Step 5: Distance Vision - Pin Hole
-  const [pinHoleRightDenominator, setPinHoleRightDenominator] = useState('6');
-  const [pinHoleLeftDenominator, setPinHoleLeftDenominator] = useState('6');
+  const [pinHoleRightDenominator, setPinHoleRightDenominator] = useState('');
+  const [pinHoleLeftDenominator, setPinHoleLeftDenominator] = useState('');
 
   // Step 6: Operator Notes
   const [operatorObservation, setOperatorObservation] = useState('');
-  const [nearVisionResult, setNearVisionResult] = useState<'pass' | 'refer' | null>('pass');
+  const [nearVisionResult, setNearVisionResult] = useState<'pass' | 'refer' | null>(null);
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data?.description && !hasLoadedData) {
+      const desc = data.data.description as VisualAcuityDescription;
+
+      if (desc.screening_details) {
+        setDistanceChart(desc.screening_details.distance_chart ?? '');
+        setScreeningDistance(desc.screening_details.screening_distance ?? '');
+      }
+
+      if (desc.distance_vision_with_spectacle) {
+        setDistanceRightDenominator(desc.distance_vision_with_spectacle.right_eye?.denominator ?? '');
+        setDistanceRightMinus(desc.distance_vision_with_spectacle.right_eye?.minus ?? '');
+        setDistanceLeftDenominator(desc.distance_vision_with_spectacle.left_eye?.denominator ?? '');
+        setDistanceLeftMinus(desc.distance_vision_with_spectacle.left_eye?.minus ?? '');
+      }
+
+      if (desc.distance_vision_unaided) {
+        setUnaidedRightDenominator(desc.distance_vision_unaided.right_eye?.denominator ?? '');
+        setUnaidedLeftDenominator(desc.distance_vision_unaided.left_eye?.denominator ?? '');
+      }
+
+      if (desc.distance_vision_pinhole) {
+        setPinHoleRightDenominator(desc.distance_vision_pinhole.right_eye?.denominator ?? '');
+        setPinHoleLeftDenominator(desc.distance_vision_pinhole.left_eye?.denominator ?? '');
+      }
+
+      if (desc.near_vision) {
+        setOperatorObservation(desc.near_vision.operator_observation ?? '');
+        setNearVisionResult(desc.near_vision.result ?? null);
+      }
+
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build description data from form state
+  const buildDescriptionData = (): VisualAcuityDescription => ({
+    screening_details: {
+      distance_chart: distanceChart,
+      screening_distance: screeningDistance,
+    },
+    distance_vision_with_spectacle: {
+      right_eye: { denominator: distanceRightDenominator, minus: distanceRightMinus },
+      left_eye: { denominator: distanceLeftDenominator, minus: distanceLeftMinus },
+    },
+    distance_vision_unaided: {
+      right_eye: { denominator: unaidedRightDenominator },
+      left_eye: { denominator: unaidedLeftDenominator },
+    },
+    distance_vision_pinhole: {
+      right_eye: { denominator: pinHoleRightDenominator },
+      left_eye: { denominator: pinHoleLeftDenominator },
+    },
+    near_vision: {
+      operator_observation: operatorObservation,
+      result: nearVisionResult,
+    },
+  });
 
   const chartOptions = [
     'HOTV',
@@ -63,7 +165,21 @@ export default function VisualAcuityScreen() {
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     } else {
-      router.back();
+      // Save and navigate back
+      saveVisualAcuity(
+        {
+          registration_id: registrationId,
+          description: buildDescriptionData(),
+        },
+        {
+          onSuccess: () => {
+            router.back();
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to save visual acuity data');
+          },
+        }
+      );
     }
   };
 
@@ -366,6 +482,27 @@ export default function VisualAcuityScreen() {
     }
   };
 
+  // Loading state
+  if (isFetching) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Visual Acuity</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={Layout.container}>
       {/* Header */}
@@ -387,12 +524,23 @@ export default function VisualAcuityScreen() {
       {/* Fixed Bottom Button */}
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleNext}>
-          <ThemedText style={styles.nextButtonText}>
-            {currentStep === 6 ? 'Save' : 'Next'}
-          </ThemedText>
-          {currentStep < 6 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+          style={[
+            styles.nextButton,
+            { backgroundColor: DesignColors.primary },
+            isSaving && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <ThemedText style={styles.nextButtonText}>
+                {currentStep === 6 ? 'Save' : 'Next'}
+              </ThemedText>
+              {currentStep < 6 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -616,5 +764,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
   },
 });
