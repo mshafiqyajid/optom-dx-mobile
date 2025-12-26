@@ -6,9 +6,20 @@ import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGetRefractionAssessment, useCreateOrUpdateRefractionAssessment } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Pressable } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Modal,
+  Pressable,
+} from 'react-native';
 
 // Dropdown options for Subjective Refraction
 const SPHERE_OPTIONS = [
@@ -79,6 +90,21 @@ function InlineDropdown({ value, options, onSelect, placeholder = 'Select' }: In
   );
 }
 
+// Refraction description data structure
+interface RefractionDescription {
+  objective: {
+    right_eye: { sph: string; cyl: string; axis: string; va: string };
+    left_eye: { sph: string; cyl: string; axis: string; va: string };
+  };
+  subjective: {
+    right_eye: { sph: string; cyl: string; axis: string; va: string };
+    left_eye: { sph: string; cyl: string; axis: string; va: string };
+    reading: { add: string; n: string; distance: string };
+  };
+  operator_observation: string;
+  result: 'pass' | 'refer' | null;
+}
+
 export default function RefractionAssessmentScreen() {
   const { id } = useLocalSearchParams();
   const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
@@ -87,59 +113,114 @@ export default function RefractionAssessmentScreen() {
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  // API hooks
+  const { data, isLoading: isFetching } = useGetRefractionAssessment(registrationId);
+  const { mutate: saveRefraction, isPending: isSaving } = useCreateOrUpdateRefractionAssessment();
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Step 1: Objective Refraction - Text inputs
-  const [objRightSph, setObjRightSph] = useState('-1.00');
-  const [objRightCyl, setObjRightCyl] = useState('-0.50');
-  const [objRightAxis, setObjRightAxis] = useState('90');
-  const [objRightVa, setObjRightVa] = useState('6 / 6');
+  const [objRightSph, setObjRightSph] = useState('');
+  const [objRightCyl, setObjRightCyl] = useState('');
+  const [objRightAxis, setObjRightAxis] = useState('');
+  const [objRightVa, setObjRightVa] = useState('');
 
-  const [objLeftSph, setObjLeftSph] = useState('-1.00');
-  const [objLeftCyl, setObjLeftCyl] = useState('-0.50');
-  const [objLeftAxis, setObjLeftAxis] = useState('90');
-  const [objLeftVa, setObjLeftVa] = useState('6 / 6');
+  const [objLeftSph, setObjLeftSph] = useState('');
+  const [objLeftCyl, setObjLeftCyl] = useState('');
+  const [objLeftAxis, setObjLeftAxis] = useState('');
+  const [objLeftVa, setObjLeftVa] = useState('');
 
   // Step 2: Subjective Refraction - Dropdowns
-  const [subRightSph, setSubRightSph] = useState('+0.75');
-  const [subRightCyl, setSubRightCyl] = useState('+0.75');
-  const [subRightAxis, setSubRightAxis] = useState('90');
-  const [subRightVa, setSubRightVa] = useState('6/6');
+  const [subRightSph, setSubRightSph] = useState('');
+  const [subRightCyl, setSubRightCyl] = useState('');
+  const [subRightAxis, setSubRightAxis] = useState('');
+  const [subRightVa, setSubRightVa] = useState('');
 
-  const [subLeftSph, setSubLeftSph] = useState('+0.75');
-  const [subLeftCyl, setSubLeftCyl] = useState('+0.75');
-  const [subLeftAxis, setSubLeftAxis] = useState('90');
-  const [subLeftVa, setSubLeftVa] = useState('6/6');
+  const [subLeftSph, setSubLeftSph] = useState('');
+  const [subLeftCyl, setSubLeftCyl] = useState('');
+  const [subLeftAxis, setSubLeftAxis] = useState('');
+  const [subLeftVa, setSubLeftVa] = useState('');
 
   // Reading spectacles
-  const [readingAdd, setReadingAdd] = useState('+0.75');
-  const [readingN, setReadingN] = useState('14');
-  const [readingDistance, setReadingDistance] = useState('40');
+  const [readingAdd, setReadingAdd] = useState('');
+  const [readingN, setReadingN] = useState('');
+  const [readingDistance, setReadingDistance] = useState('');
 
   // Step 3: Operator Notes
   const [operatorObservation, setOperatorObservation] = useState('');
-  const [testResult, setTestResult] = useState<'pass' | 'refer'>('pass');
+  const [testResult, setTestResult] = useState<'pass' | 'refer' | null>(null);
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data?.description && !hasLoadedData) {
+      const desc = data.data.description as unknown as RefractionDescription;
+
+      if (desc.objective) {
+        setObjRightSph(desc.objective.right_eye?.sph ?? '');
+        setObjRightCyl(desc.objective.right_eye?.cyl ?? '');
+        setObjRightAxis(desc.objective.right_eye?.axis ?? '');
+        setObjRightVa(desc.objective.right_eye?.va ?? '');
+        setObjLeftSph(desc.objective.left_eye?.sph ?? '');
+        setObjLeftCyl(desc.objective.left_eye?.cyl ?? '');
+        setObjLeftAxis(desc.objective.left_eye?.axis ?? '');
+        setObjLeftVa(desc.objective.left_eye?.va ?? '');
+      }
+
+      if (desc.subjective) {
+        setSubRightSph(desc.subjective.right_eye?.sph ?? '');
+        setSubRightCyl(desc.subjective.right_eye?.cyl ?? '');
+        setSubRightAxis(desc.subjective.right_eye?.axis ?? '');
+        setSubRightVa(desc.subjective.right_eye?.va ?? '');
+        setSubLeftSph(desc.subjective.left_eye?.sph ?? '');
+        setSubLeftCyl(desc.subjective.left_eye?.cyl ?? '');
+        setSubLeftAxis(desc.subjective.left_eye?.axis ?? '');
+        setSubLeftVa(desc.subjective.left_eye?.va ?? '');
+        setReadingAdd(desc.subjective.reading?.add ?? '');
+        setReadingN(desc.subjective.reading?.n ?? '');
+        setReadingDistance(desc.subjective.reading?.distance ?? '');
+      }
+
+      setOperatorObservation(desc.operator_observation ?? '');
+      setTestResult(desc.result ?? null);
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build description data from form state
+  const buildDescriptionData = (): RefractionDescription => ({
+    objective: {
+      right_eye: { sph: objRightSph, cyl: objRightCyl, axis: objRightAxis, va: objRightVa },
+      left_eye: { sph: objLeftSph, cyl: objLeftCyl, axis: objLeftAxis, va: objLeftVa },
+    },
+    subjective: {
+      right_eye: { sph: subRightSph, cyl: subRightCyl, axis: subRightAxis, va: subRightVa },
+      left_eye: { sph: subLeftSph, cyl: subLeftCyl, axis: subLeftAxis, va: subLeftVa },
+      reading: { add: readingAdd, n: readingN, distance: readingDistance },
+    },
+    operator_observation: operatorObservation,
+    result: testResult,
+  });
 
   const handleNext = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       // Save and navigate back
-      console.log('Saving refraction assessment:', {
-        registrationId,
-        objective: {
-          rightEye: { sph: objRightSph, cyl: objRightCyl, axis: objRightAxis, va: objRightVa },
-          leftEye: { sph: objLeftSph, cyl: objLeftCyl, axis: objLeftAxis, va: objLeftVa },
+      saveRefraction(
+        {
+          registration_id: registrationId,
+          description: buildDescriptionData(),
         },
-        subjective: {
-          rightEye: { sph: subRightSph, cyl: subRightCyl, axis: subRightAxis, va: subRightVa },
-          leftEye: { sph: subLeftSph, cyl: subLeftCyl, axis: subLeftAxis, va: subLeftVa },
-          reading: { add: readingAdd, n: readingN, distance: readingDistance },
-        },
-        operatorObservation,
-        testResult,
-      });
-      router.back();
+        {
+          onSuccess: () => {
+            router.back();
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to save refraction assessment data');
+          },
+        }
+      );
     }
   };
 
@@ -373,6 +454,27 @@ export default function RefractionAssessmentScreen() {
     }
   };
 
+  // Loading state
+  if (isFetching) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Refraction Assessment</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={Layout.container}>
       {/* Header */}
@@ -396,12 +498,23 @@ export default function RefractionAssessmentScreen() {
       {/* Fixed Bottom Button */}
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleNext}>
-          <ThemedText style={styles.nextButtonText}>
-            {currentStep === 3 ? 'Save' : 'Next'}
-          </ThemedText>
-          <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
+          style={[
+            styles.nextButton,
+            { backgroundColor: DesignColors.primary },
+            isSaving && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <ThemedText style={styles.nextButtonText}>
+                {currentStep === 3 ? 'Save' : 'Next'}
+              </ThemedText>
+              {currentStep < 3 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -569,5 +682,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semibold,
     color: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
   },
 });
