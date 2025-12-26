@@ -227,8 +227,9 @@ The following notes highlight areas where the mobile UI data structure may diffe
 
 ### Checkpoint Screen
 
-- **Status**: Uses mock checkpoint type mapping (`history_taking`, `preliminary_test`, etc.)
-- **TODO**: Verify backend returns `checkpoint.type` field matching these values
+- **Status**: ✅ Using `RegistrationCheckpointType` from `services/registrations/type.registrations.d.ts`
+- **Checkpoint types**: `profile_verification`, `history_taking`, `preliminary_test`, `visual_acuity_assessment`, `external_eye_examination`, `refraction_assessment`, `case_submission`
+- **API field**: Backend returns `checkpoint` field (not `checkpoint.type`) - already correctly mapped
 
 ### History Taking Screen
 
