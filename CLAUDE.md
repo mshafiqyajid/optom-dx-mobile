@@ -117,3 +117,28 @@ The codebase uses platform-specific file extensions:
 - **Tab navigation** with haptic feedback
 - **SF Symbols** support via `expo-symbols` (iOS native icons with fallback)
 - **Automatic theme** switching based on system preferences
+
+## IMPORTANT: Adding New Screens
+
+When creating a new screen in the `app/` directory, you **MUST** register it in `app/_layout.tsx` with `headerShown: false` to prevent double headers (Expo Router's default header + your custom header).
+
+```tsx
+// In app/_layout.tsx - Add your new screen to the Stack
+<Stack.Screen name="your-screen/[id]" options={{ headerShown: false }} />
+```
+
+**Current registered screens:**
+- `(auth)` - Authentication flow
+- `(tabs)` - Tab navigation
+- `event/[id]` - Event details
+- `profile/[id]` - Profile screen
+- `profile/guardian/[id]` - Guardian profile
+- `checkpoint/[id]` - Checkpoint timeline
+- `history-taking/[id]` - History Taking assessment
+- `preliminary-test/[id]` - Preliminary Test assessment
+- `visual-acuity/[id]` - Visual Acuity assessment
+- `external-eye/[id]` - External Eye Examination
+- `refraction/[id]` - Refraction Assessment
+- `case-submission/[id]` - Case Submission
+
+**Failure to register screens will result in double headers appearing on the screen.**
