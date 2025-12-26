@@ -5,47 +5,166 @@ import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGetPreliminaryTest, useCreateOrUpdatePreliminaryTest } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+// Section data interfaces
+interface SectionAData {
+  right_eye: {
+    sphere: string;
+    cylinder: string;
+    axis: string;
+    va: string;
+  };
+  left_eye: {
+    sphere: string;
+    cylinder: string;
+    axis: string;
+    va: string;
+  };
+}
+
+interface SectionBData {
+  right_eye_pd: string;
+  left_eye_pd: string;
+  pd_distance: string;
+}
+
+interface SectionCData {
+  deviation_size: 'small' | 'big' | null;
+  deviation_type: 'exophoria' | 'esophoria' | null;
+}
 
 export default function PreliminaryTestScreen() {
-  const { id: _id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
+
+  // API hooks
+  const { data, isLoading: isFetching } = useGetPreliminaryTest(registrationId);
+  const { mutate: savePreliminaryTest, isPending: isSaving } = useCreateOrUpdatePreliminaryTest();
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Section A: Old Prescription (OLD RX)
   // Right Eye
-  const [rightEyeSphere, setRightEyeSphere] = useState('-1.00');
-  const [rightEyeCylinder, setRightEyeCylinder] = useState('-0.50');
-  const [rightEyeAxis, setRightEyeAxis] = useState('90');
-  const [rightEyeVA, setRightEyeVA] = useState('6 / 6');
+  const [rightEyeSphere, setRightEyeSphere] = useState('');
+  const [rightEyeCylinder, setRightEyeCylinder] = useState('');
+  const [rightEyeAxis, setRightEyeAxis] = useState('');
+  const [rightEyeVA, setRightEyeVA] = useState('');
 
   // Left Eye
-  const [leftEyeSphere, setLeftEyeSphere] = useState('-1.00');
-  const [leftEyeCylinder, setLeftEyeCylinder] = useState('-0.50');
-  const [leftEyeAxis, setLeftEyeAxis] = useState('90');
-  const [leftEyeVA, setLeftEyeVA] = useState('6 / 6');
+  const [leftEyeSphere, setLeftEyeSphere] = useState('');
+  const [leftEyeCylinder, setLeftEyeCylinder] = useState('');
+  const [leftEyeAxis, setLeftEyeAxis] = useState('');
+  const [leftEyeVA, setLeftEyeVA] = useState('');
 
   // Section B: Pupillary Distance
-  const [rightEyePD, setRightEyePD] = useState('0');
-  const [leftEyePD, setLeftEyePD] = useState('0');
-  const [pdDistance, setPdDistance] = useState('0');
+  const [rightEyePD, setRightEyePD] = useState('');
+  const [leftEyePD, setLeftEyePD] = useState('');
+  const [pdDistance, setPdDistance] = useState('');
 
   // Section C: Cover Test
-  const [deviationSize, setDeviationSize] = useState<'small' | 'big' | null>('small');
-  const [deviationType, setDeviationType] = useState<'exophoria' | 'esophoria' | null>('exophoria');
+  const [deviationSize, setDeviationSize] = useState<'small' | 'big' | null>(null);
+  const [deviationType, setDeviationType] = useState<'exophoria' | 'esophoria' | null>(null);
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data && !hasLoadedData) {
+      const { section_a, section_b, section_c } = data.data;
+
+      if (section_a) {
+        const sectionA = section_a as SectionAData;
+        setRightEyeSphere(sectionA.right_eye?.sphere ?? '');
+        setRightEyeCylinder(sectionA.right_eye?.cylinder ?? '');
+        setRightEyeAxis(sectionA.right_eye?.axis ?? '');
+        setRightEyeVA(sectionA.right_eye?.va ?? '');
+        setLeftEyeSphere(sectionA.left_eye?.sphere ?? '');
+        setLeftEyeCylinder(sectionA.left_eye?.cylinder ?? '');
+        setLeftEyeAxis(sectionA.left_eye?.axis ?? '');
+        setLeftEyeVA(sectionA.left_eye?.va ?? '');
+      }
+
+      if (section_b) {
+        const sectionB = section_b as SectionBData;
+        setRightEyePD(sectionB.right_eye_pd ?? '');
+        setLeftEyePD(sectionB.left_eye_pd ?? '');
+        setPdDistance(sectionB.pd_distance ?? '');
+      }
+
+      if (section_c) {
+        const sectionC = section_c as SectionCData;
+        setDeviationSize(sectionC.deviation_size ?? null);
+        setDeviationType(sectionC.deviation_type ?? null);
+      }
+
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build section data from form state
+  const buildSectionAData = (): SectionAData => ({
+    right_eye: {
+      sphere: rightEyeSphere,
+      cylinder: rightEyeCylinder,
+      axis: rightEyeAxis,
+      va: rightEyeVA,
+    },
+    left_eye: {
+      sphere: leftEyeSphere,
+      cylinder: leftEyeCylinder,
+      axis: leftEyeAxis,
+      va: leftEyeVA,
+    },
+  });
+
+  const buildSectionBData = (): SectionBData => ({
+    right_eye_pd: rightEyePD,
+    left_eye_pd: leftEyePD,
+    pd_distance: pdDistance,
+  });
+
+  const buildSectionCData = (): SectionCData => ({
+    deviation_size: deviationSize,
+    deviation_type: deviationType,
+  });
 
   const handleNext = () => {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Navigate back or to next section
-      router.back();
+      // Save and navigate back
+      savePreliminaryTest(
+        {
+          registration_id: registrationId,
+          section_a: buildSectionAData(),
+          section_b: buildSectionBData(),
+          section_c: buildSectionCData(),
+        },
+        {
+          onSuccess: () => {
+            router.back();
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to save preliminary test data');
+          },
+        }
+      );
     }
   };
 
@@ -277,6 +396,27 @@ export default function PreliminaryTestScreen() {
     }
   };
 
+  // Loading state
+  if (isFetching) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Preliminary Test</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={Layout.container}>
       {/* Header */}
@@ -298,12 +438,23 @@ export default function PreliminaryTestScreen() {
       {/* Fixed Bottom Button */}
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleNext}>
-          <ThemedText style={styles.nextButtonText}>
-            {currentStep === 2 ? 'Save' : 'Next'}
-          </ThemedText>
-          {currentStep < 2 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+          style={[
+            styles.nextButton,
+            { backgroundColor: DesignColors.primary },
+            isSaving && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <ThemedText style={styles.nextButtonText}>
+                {currentStep === 2 ? 'Save' : 'Next'}
+              </ThemedText>
+              {currentStep < 2 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -436,5 +587,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semibold,
     color: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
   },
 });
