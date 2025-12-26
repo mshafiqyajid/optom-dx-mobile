@@ -20,28 +20,36 @@ import {
   View,
 } from 'react-native';
 
-// Visual Acuity description data structure
+// Backend API structure for Visual Acuity Assessment
+interface EyeValue {
+  right_eye: string;
+  left_eye: string;
+}
+
+interface OperatorNotes {
+  operator_observation: string;
+  distance_vision_test_result: string;
+}
+
+interface DistanceVision {
+  with_spectacle: EyeValue;
+  un_aided: EyeValue;
+  pin_hole: EyeValue;
+  operator_notes: OperatorNotes;
+}
+
+interface NearVision {
+  aided: EyeValue;
+  un_aided: EyeValue;
+  operator_notes: OperatorNotes;
+}
+
 interface VisualAcuityDescription {
-  screening_details: {
-    distance_chart: string;
-    screening_distance: string;
-  };
-  distance_vision_with_spectacle: {
-    right_eye: { denominator: string; minus: string };
-    left_eye: { denominator: string; minus: string };
-  };
-  distance_vision_unaided: {
-    right_eye: { denominator: string };
-    left_eye: { denominator: string };
-  };
-  distance_vision_pinhole: {
-    right_eye: { denominator: string };
-    left_eye: { denominator: string };
-  };
-  near_vision: {
-    operator_observation: string;
-    result: 'pass' | 'refer' | null;
-  };
+  distance_visual_acuity_chart: string;
+  vision_screening_distance: string;
+  distance_vision: DistanceVision;
+  near_visual_acuity_chart: string;
+  new_vision: NearVision; // Note: Backend uses "new_vision" not "near_vision"
 }
 
 export default function VisualAcuityScreen() {
@@ -60,87 +68,74 @@ export default function VisualAcuityScreen() {
   const [currentStep, setCurrentStep] = useState(1);
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
-  // Step 1: Screening Details - Distance Visual Acuity Chart
+  // Step 1: Distance Visual Acuity Chart
   const [distanceChart, setDistanceChart] = useState<string>('');
 
   // Step 2: Vision Screening Distance
   const [screeningDistance, setScreeningDistance] = useState<string>('');
 
-  // Step 3: Distance Vision - With Spectacle
-  const [distanceRightDenominator, setDistanceRightDenominator] = useState('');
-  const [distanceRightMinus, setDistanceRightMinus] = useState('');
-  const [distanceLeftDenominator, setDistanceLeftDenominator] = useState('');
-  const [distanceLeftMinus, setDistanceLeftMinus] = useState('');
+  // Step 3: Distance Vision - With Spectacle (backend uses simple string values)
+  const [withSpectacleRight, setWithSpectacleRight] = useState('');
+  const [withSpectacleLeft, setWithSpectacleLeft] = useState('');
 
   // Step 4: Distance Vision - Un-Aided
-  const [unaidedRightDenominator, setUnaidedRightDenominator] = useState('');
-  const [unaidedLeftDenominator, setUnaidedLeftDenominator] = useState('');
+  const [unaidedRight, setUnaidedRight] = useState('');
+  const [unaidedLeft, setUnaidedLeft] = useState('');
 
   // Step 5: Distance Vision - Pin Hole
-  const [pinHoleRightDenominator, setPinHoleRightDenominator] = useState('');
-  const [pinHoleLeftDenominator, setPinHoleLeftDenominator] = useState('');
+  const [pinHoleRight, setPinHoleRight] = useState('');
+  const [pinHoleLeft, setPinHoleLeft] = useState('');
 
-  // Step 6: Operator Notes
-  const [operatorObservation, setOperatorObservation] = useState('');
-  const [nearVisionResult, setNearVisionResult] = useState<'pass' | 'refer' | null>(null);
+  // Step 6: Operator Notes (for distance vision)
+  const [distanceOperatorObservation, setDistanceOperatorObservation] = useState('');
+  const [distanceTestResult, setDistanceTestResult] = useState<'pass' | 'refer' | null>(null);
 
-  // Pre-fill form from existing data
+  // Pre-fill form from existing data (backend uses flat structure)
   useEffect(() => {
     if (data?.data?.description && !hasLoadedData) {
       const desc = data.data.description as VisualAcuityDescription;
 
-      if (desc.screening_details) {
-        setDistanceChart(desc.screening_details.distance_chart ?? '');
-        setScreeningDistance(desc.screening_details.screening_distance ?? '');
-      }
+      // Screening details
+      setDistanceChart(desc.distance_visual_acuity_chart ?? '');
+      setScreeningDistance(desc.vision_screening_distance ?? '');
 
-      if (desc.distance_vision_with_spectacle) {
-        setDistanceRightDenominator(desc.distance_vision_with_spectacle.right_eye?.denominator ?? '');
-        setDistanceRightMinus(desc.distance_vision_with_spectacle.right_eye?.minus ?? '');
-        setDistanceLeftDenominator(desc.distance_vision_with_spectacle.left_eye?.denominator ?? '');
-        setDistanceLeftMinus(desc.distance_vision_with_spectacle.left_eye?.minus ?? '');
-      }
-
-      if (desc.distance_vision_unaided) {
-        setUnaidedRightDenominator(desc.distance_vision_unaided.right_eye?.denominator ?? '');
-        setUnaidedLeftDenominator(desc.distance_vision_unaided.left_eye?.denominator ?? '');
-      }
-
-      if (desc.distance_vision_pinhole) {
-        setPinHoleRightDenominator(desc.distance_vision_pinhole.right_eye?.denominator ?? '');
-        setPinHoleLeftDenominator(desc.distance_vision_pinhole.left_eye?.denominator ?? '');
-      }
-
-      if (desc.near_vision) {
-        setOperatorObservation(desc.near_vision.operator_observation ?? '');
-        setNearVisionResult(desc.near_vision.result ?? null);
+      // Distance vision
+      if (desc.distance_vision) {
+        setWithSpectacleRight(desc.distance_vision.with_spectacle?.right_eye ?? '');
+        setWithSpectacleLeft(desc.distance_vision.with_spectacle?.left_eye ?? '');
+        setUnaidedRight(desc.distance_vision.un_aided?.right_eye ?? '');
+        setUnaidedLeft(desc.distance_vision.un_aided?.left_eye ?? '');
+        setPinHoleRight(desc.distance_vision.pin_hole?.right_eye ?? '');
+        setPinHoleLeft(desc.distance_vision.pin_hole?.left_eye ?? '');
+        setDistanceOperatorObservation(desc.distance_vision.operator_notes?.operator_observation ?? '');
+        setDistanceTestResult((desc.distance_vision.operator_notes?.distance_vision_test_result as 'pass' | 'refer') ?? null);
       }
 
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build description data from form state
+  // Build description data matching backend structure
   const buildDescriptionData = (): VisualAcuityDescription => ({
-    screening_details: {
-      distance_chart: distanceChart,
-      screening_distance: screeningDistance,
+    distance_visual_acuity_chart: distanceChart,
+    vision_screening_distance: screeningDistance,
+    distance_vision: {
+      with_spectacle: { right_eye: withSpectacleRight, left_eye: withSpectacleLeft },
+      un_aided: { right_eye: unaidedRight, left_eye: unaidedLeft },
+      pin_hole: { right_eye: pinHoleRight, left_eye: pinHoleLeft },
+      operator_notes: {
+        operator_observation: distanceOperatorObservation,
+        distance_vision_test_result: distanceTestResult ?? '',
+      },
     },
-    distance_vision_with_spectacle: {
-      right_eye: { denominator: distanceRightDenominator, minus: distanceRightMinus },
-      left_eye: { denominator: distanceLeftDenominator, minus: distanceLeftMinus },
-    },
-    distance_vision_unaided: {
-      right_eye: { denominator: unaidedRightDenominator },
-      left_eye: { denominator: unaidedLeftDenominator },
-    },
-    distance_vision_pinhole: {
-      right_eye: { denominator: pinHoleRightDenominator },
-      left_eye: { denominator: pinHoleLeftDenominator },
-    },
-    near_vision: {
-      operator_observation: operatorObservation,
-      result: nearVisionResult,
+    near_visual_acuity_chart: '', // Can be added if needed
+    new_vision: {
+      aided: { right_eye: '', left_eye: '' },
+      un_aided: { right_eye: '', left_eye: '' },
+      operator_notes: {
+        operator_observation: '',
+        distance_vision_test_result: '',
+      },
     },
   });
 
@@ -159,7 +154,6 @@ export default function VisualAcuityScreen() {
   ];
 
   const denominatorOptions = ['60', '36', '24', '18', '12', '9', '6'];
-  const minusOptions = ['-1', '-2', '-3', '-4', '-5', '-6'];
 
   const handleNext = () => {
     if (currentStep < 6) {
@@ -294,20 +288,14 @@ export default function VisualAcuityScreen() {
               <View style={styles.visionSection}>
                 <ThemedText style={styles.eyeLabel}>Right Eye (R)</ThemedText>
 
-                <View style={styles.visionRow}>
+                <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
                   <Dropdown
-                    value={distanceRightDenominator}
+                    value={withSpectacleRight || '6'}
                     options={denominatorOptions}
-                    onSelect={setDistanceRightDenominator}
+                    onSelect={setWithSpectacleRight}
                     isLarge
-                  />
-                  <Dropdown
-                    value={distanceRightMinus}
-                    options={minusOptions}
-                    onSelect={setDistanceRightMinus}
-                    isLarge={false}
                   />
                 </View>
               </View>
@@ -316,20 +304,14 @@ export default function VisualAcuityScreen() {
               <View style={styles.visionSection}>
                 <ThemedText style={styles.eyeLabel}>Left Eye (L)</ThemedText>
 
-                <View style={styles.visionRow}>
+                <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
                   <Dropdown
-                    value={distanceLeftDenominator}
+                    value={withSpectacleLeft || '6'}
                     options={denominatorOptions}
-                    onSelect={setDistanceLeftDenominator}
+                    onSelect={setWithSpectacleLeft}
                     isLarge
-                  />
-                  <Dropdown
-                    value={distanceLeftMinus}
-                    options={minusOptions}
-                    onSelect={setDistanceLeftMinus}
-                    isLarge={false}
                   />
                 </View>
               </View>
@@ -353,12 +335,11 @@ export default function VisualAcuityScreen() {
                 <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={unaidedRightDenominator}
-                    onChangeText={setUnaidedRightDenominator}
-                    style={[styles.visionInputLarge, { color: colors.text, borderColor: colors.border }]}
-                    textAlign="center"
-                    keyboardType="numeric"
+                  <Dropdown
+                    value={unaidedRight || '6'}
+                    options={denominatorOptions}
+                    onSelect={setUnaidedRight}
+                    isLarge
                   />
                 </View>
               </View>
@@ -370,12 +351,11 @@ export default function VisualAcuityScreen() {
                 <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={unaidedLeftDenominator}
-                    onChangeText={setUnaidedLeftDenominator}
-                    style={[styles.visionInputLarge, { color: colors.text, borderColor: colors.border }]}
-                    textAlign="center"
-                    keyboardType="numeric"
+                  <Dropdown
+                    value={unaidedLeft || '6'}
+                    options={denominatorOptions}
+                    onSelect={setUnaidedLeft}
+                    isLarge
                   />
                 </View>
               </View>
@@ -399,12 +379,11 @@ export default function VisualAcuityScreen() {
                 <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={pinHoleRightDenominator}
-                    onChangeText={setPinHoleRightDenominator}
-                    style={[styles.visionInputLarge, { color: colors.text, borderColor: colors.border }]}
-                    textAlign="center"
-                    keyboardType="numeric"
+                  <Dropdown
+                    value={pinHoleRight || '6'}
+                    options={denominatorOptions}
+                    onSelect={setPinHoleRight}
+                    isLarge
                   />
                 </View>
               </View>
@@ -416,12 +395,11 @@ export default function VisualAcuityScreen() {
                 <View style={styles.visionRowCentered}>
                   <ThemedText style={styles.largeNumber}>6</ThemedText>
                   <ThemedText style={styles.separator}>/</ThemedText>
-                  <TextInput
-                    value={pinHoleLeftDenominator}
-                    onChangeText={setPinHoleLeftDenominator}
-                    style={[styles.visionInputLarge, { color: colors.text, borderColor: colors.border }]}
-                    textAlign="center"
-                    keyboardType="numeric"
+                  <Dropdown
+                    value={pinHoleLeft || '6'}
+                    options={denominatorOptions}
+                    onSelect={setPinHoleLeft}
+                    isLarge
                   />
                 </View>
               </View>
@@ -434,7 +412,7 @@ export default function VisualAcuityScreen() {
         return (
           <View style={styles.sectionCard}>
             <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
-              <ThemedText style={styles.sectionTitle}>Near Vision : Operator Notes</ThemedText>
+              <ThemedText style={styles.sectionTitle}>Distance Vision : Operator Notes</ThemedText>
             </View>
 
             <View style={styles.questionContent}>
@@ -446,8 +424,8 @@ export default function VisualAcuityScreen() {
                   placeholderTextColor={colors.textSecondary}
                   multiline
                   numberOfLines={6}
-                  value={operatorObservation}
-                  onChangeText={setOperatorObservation}
+                  value={distanceOperatorObservation}
+                  onChangeText={setDistanceOperatorObservation}
                   style={[
                     styles.textArea,
                     {
@@ -460,17 +438,17 @@ export default function VisualAcuityScreen() {
               </View>
 
               <View style={styles.questionContainer}>
-                <ThemedText style={styles.questionLabel}>Near Vision Test Result</ThemedText>
+                <ThemedText style={styles.questionLabel}>Distance Vision Test Result</ThemedText>
 
                 <RadioButton
                   label="Pass"
-                  selected={nearVisionResult === 'pass'}
-                  onPress={() => setNearVisionResult('pass')}
+                  selected={distanceTestResult === 'pass'}
+                  onPress={() => setDistanceTestResult('pass')}
                 />
                 <RadioButton
                   label="Refer"
-                  selected={nearVisionResult === 'refer'}
-                  onPress={() => setNearVisionResult('refer')}
+                  selected={distanceTestResult === 'refer'}
+                  onPress={() => setDistanceTestResult('refer')}
                 />
               </View>
             </View>

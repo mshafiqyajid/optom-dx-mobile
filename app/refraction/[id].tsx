@@ -90,19 +90,37 @@ function InlineDropdown({ value, options, onSelect, placeholder = 'Select' }: In
   );
 }
 
-// Refraction description data structure
-interface RefractionDescription {
-  objective: {
-    right_eye: { sph: string; cyl: string; axis: string; va: string };
-    left_eye: { sph: string; cyl: string; axis: string; va: string };
-  };
-  subjective: {
-    right_eye: { sph: string; cyl: string; axis: string; va: string };
-    left_eye: { sph: string; cyl: string; axis: string; va: string };
-    reading: { add: string; n: string; distance: string };
-  };
+// Backend API structure for Refraction Assessment
+// Uses {a, b, c, d} for eye data instead of {sph, cyl, axis, va}
+interface EyeRefraction {
+  a: string; // Sphere
+  b: string; // Cylinder
+  c: string; // Axis
+  d: string; // VA
+}
+
+interface ReadingSpectacles {
+  a: string; // Add power
+  b: string; // N value
+  c: string; // Distance
+}
+
+interface OperatorNotes {
   operator_observation: string;
-  result: 'pass' | 'refer' | null;
+  test_result: string;
+}
+
+interface RefractionDescription {
+  objective_refraction: {
+    right_eye: EyeRefraction;
+    left_eye: EyeRefraction;
+  };
+  subjective_refraction: {
+    right_eye: EyeRefraction;
+    left_eye: EyeRefraction;
+    reading_spectacles_prescribe: ReadingSpectacles;
+  };
+  operator_notes: OperatorNotes;
 }
 
 export default function RefractionAssessmentScreen() {
@@ -151,55 +169,59 @@ export default function RefractionAssessmentScreen() {
   const [operatorObservation, setOperatorObservation] = useState('');
   const [testResult, setTestResult] = useState<'pass' | 'refer' | null>(null);
 
-  // Pre-fill form from existing data
+  // Pre-fill form from existing data (uses backend {a, b, c, d} structure)
   useEffect(() => {
     if (data?.data?.description && !hasLoadedData) {
       const desc = data.data.description as unknown as RefractionDescription;
 
-      if (desc.objective) {
-        setObjRightSph(desc.objective.right_eye?.sph ?? '');
-        setObjRightCyl(desc.objective.right_eye?.cyl ?? '');
-        setObjRightAxis(desc.objective.right_eye?.axis ?? '');
-        setObjRightVa(desc.objective.right_eye?.va ?? '');
-        setObjLeftSph(desc.objective.left_eye?.sph ?? '');
-        setObjLeftCyl(desc.objective.left_eye?.cyl ?? '');
-        setObjLeftAxis(desc.objective.left_eye?.axis ?? '');
-        setObjLeftVa(desc.objective.left_eye?.va ?? '');
+      if (desc.objective_refraction) {
+        setObjRightSph(desc.objective_refraction.right_eye?.a ?? '');
+        setObjRightCyl(desc.objective_refraction.right_eye?.b ?? '');
+        setObjRightAxis(desc.objective_refraction.right_eye?.c ?? '');
+        setObjRightVa(desc.objective_refraction.right_eye?.d ?? '');
+        setObjLeftSph(desc.objective_refraction.left_eye?.a ?? '');
+        setObjLeftCyl(desc.objective_refraction.left_eye?.b ?? '');
+        setObjLeftAxis(desc.objective_refraction.left_eye?.c ?? '');
+        setObjLeftVa(desc.objective_refraction.left_eye?.d ?? '');
       }
 
-      if (desc.subjective) {
-        setSubRightSph(desc.subjective.right_eye?.sph ?? '');
-        setSubRightCyl(desc.subjective.right_eye?.cyl ?? '');
-        setSubRightAxis(desc.subjective.right_eye?.axis ?? '');
-        setSubRightVa(desc.subjective.right_eye?.va ?? '');
-        setSubLeftSph(desc.subjective.left_eye?.sph ?? '');
-        setSubLeftCyl(desc.subjective.left_eye?.cyl ?? '');
-        setSubLeftAxis(desc.subjective.left_eye?.axis ?? '');
-        setSubLeftVa(desc.subjective.left_eye?.va ?? '');
-        setReadingAdd(desc.subjective.reading?.add ?? '');
-        setReadingN(desc.subjective.reading?.n ?? '');
-        setReadingDistance(desc.subjective.reading?.distance ?? '');
+      if (desc.subjective_refraction) {
+        setSubRightSph(desc.subjective_refraction.right_eye?.a ?? '');
+        setSubRightCyl(desc.subjective_refraction.right_eye?.b ?? '');
+        setSubRightAxis(desc.subjective_refraction.right_eye?.c ?? '');
+        setSubRightVa(desc.subjective_refraction.right_eye?.d ?? '');
+        setSubLeftSph(desc.subjective_refraction.left_eye?.a ?? '');
+        setSubLeftCyl(desc.subjective_refraction.left_eye?.b ?? '');
+        setSubLeftAxis(desc.subjective_refraction.left_eye?.c ?? '');
+        setSubLeftVa(desc.subjective_refraction.left_eye?.d ?? '');
+        setReadingAdd(desc.subjective_refraction.reading_spectacles_prescribe?.a ?? '');
+        setReadingN(desc.subjective_refraction.reading_spectacles_prescribe?.b ?? '');
+        setReadingDistance(desc.subjective_refraction.reading_spectacles_prescribe?.c ?? '');
       }
 
-      setOperatorObservation(desc.operator_observation ?? '');
-      setTestResult(desc.result ?? null);
+      if (desc.operator_notes) {
+        setOperatorObservation(desc.operator_notes.operator_observation ?? '');
+        setTestResult((desc.operator_notes.test_result as 'pass' | 'refer') ?? null);
+      }
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build description data from form state
+  // Build description data from form state matching backend structure
   const buildDescriptionData = (): RefractionDescription => ({
-    objective: {
-      right_eye: { sph: objRightSph, cyl: objRightCyl, axis: objRightAxis, va: objRightVa },
-      left_eye: { sph: objLeftSph, cyl: objLeftCyl, axis: objLeftAxis, va: objLeftVa },
+    objective_refraction: {
+      right_eye: { a: objRightSph, b: objRightCyl, c: objRightAxis, d: objRightVa },
+      left_eye: { a: objLeftSph, b: objLeftCyl, c: objLeftAxis, d: objLeftVa },
     },
-    subjective: {
-      right_eye: { sph: subRightSph, cyl: subRightCyl, axis: subRightAxis, va: subRightVa },
-      left_eye: { sph: subLeftSph, cyl: subLeftCyl, axis: subLeftAxis, va: subLeftVa },
-      reading: { add: readingAdd, n: readingN, distance: readingDistance },
+    subjective_refraction: {
+      right_eye: { a: subRightSph, b: subRightCyl, c: subRightAxis, d: subRightVa },
+      left_eye: { a: subLeftSph, b: subLeftCyl, c: subLeftAxis, d: subLeftVa },
+      reading_spectacles_prescribe: { a: readingAdd, b: readingN, c: readingDistance },
     },
-    operator_observation: operatorObservation,
-    result: testResult,
+    operator_notes: {
+      operator_observation: operatorObservation,
+      test_result: testResult ?? '',
+    },
   });
 
   const handleNext = () => {

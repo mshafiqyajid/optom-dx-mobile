@@ -78,14 +78,16 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
-// Case Submission description data structure
+// Backend API structure for Case Submission
 interface CaseSubmissionDescription {
   referral: {
-    enter_referral_list: 'yes' | 'no';
-    follow_up: 'no_need' | '3_months' | '1_month';
+    referral_list: string; // "yes" | "no"
+    follow_up: string; // "no need" (with space)
   };
-  overall_result: 'pass' | 'refer' | 'urgent_refer';
-  note: string;
+  overall_result: {
+    referral_list: string; // "pass" | "refer" | "urgent_refer"
+    notes: string;
+  };
 }
 
 export default function CaseSubmissionScreen() {
@@ -112,31 +114,47 @@ export default function CaseSubmissionScreen() {
   const [overallResult, setOverallResult] = useState<'pass' | 'refer' | 'urgent_refer'>('pass');
   const [note, setNote] = useState('');
 
-  // Pre-fill form from existing data
+  // Pre-fill form from existing data (uses backend structure)
   useEffect(() => {
     if (data?.data?.description && !hasLoadedData) {
       const desc = data.data.description as unknown as CaseSubmissionDescription;
 
       if (desc.referral) {
-        setEnterReferralList(desc.referral.enter_referral_list ?? 'no');
-        setReferralFollowUp(desc.referral.follow_up ?? 'no_need');
+        setEnterReferralList((desc.referral.referral_list as 'yes' | 'no') ?? 'no');
+        // Convert "no need" back to "no_need" for UI state
+        const followUp = desc.referral.follow_up;
+        if (followUp === 'no need') setReferralFollowUp('no_need');
+        else if (followUp === '3 months') setReferralFollowUp('3_months');
+        else if (followUp === '1 month') setReferralFollowUp('1_month');
+        else setReferralFollowUp('no_need');
       }
 
-      setOverallResult(desc.overall_result ?? 'pass');
-      setNote(desc.note ?? '');
+      if (desc.overall_result) {
+        setOverallResult((desc.overall_result.referral_list as 'pass' | 'refer' | 'urgent_refer') ?? 'pass');
+        setNote(desc.overall_result.notes ?? '');
+      }
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build description data from form state
-  const buildDescriptionData = (): CaseSubmissionDescription => ({
-    referral: {
-      enter_referral_list: enterReferralList,
-      follow_up: referralFollowUp,
-    },
-    overall_result: overallResult,
-    note: note,
-  });
+  // Build description data from form state matching backend structure
+  const buildDescriptionData = (): CaseSubmissionDescription => {
+    // Convert UI state to backend format (with spaces)
+    let followUpValue = 'no need';
+    if (referralFollowUp === '3_months') followUpValue = '3 months';
+    else if (referralFollowUp === '1_month') followUpValue = '1 month';
+
+    return {
+      referral: {
+        referral_list: enterReferralList,
+        follow_up: followUpValue,
+      },
+      overall_result: {
+        referral_list: overallResult,
+        notes: note,
+      },
+    };
+  };
 
   const handleNext = () => {
     if (currentStep < 4) {

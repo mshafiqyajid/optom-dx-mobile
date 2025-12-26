@@ -19,18 +19,36 @@ import {
   View,
 } from 'react-native';
 
-// Section A form data structure
+// Backend API structure for Section A (question_1 to question_14)
+interface QuestionWithNotes {
+  answer: string;
+  notes?: string;
+}
+
+interface QuestionAnswer {
+  answer: string;
+}
+
 interface SectionAData {
-  blurred_vision: 'yes' | 'no' | null;
-  blurred_vision_notes: string;
-  eye_pain: 'yes' | 'no' | null;
-  eye_pain_notes: string;
-  pain_location: 'localise' | 'radiate' | null;
-  onset: 'gradual' | 'sudden' | null;
-  frequency: 'frequent' | 'occasional' | null;
-  timing: 'daytime' | 'nighttime' | null;
-  severity: number;
-  relief_factor: string;
+  question_1: QuestionWithNotes; // Blurred vision (yes/no + notes)
+  question_2: QuestionWithNotes; // Eye pain (yes/no + notes)
+  question_3: QuestionAnswer;    // Pain location (localise/radiate)
+  question_4: QuestionAnswer;    // Onset (gradial/sudden) - note: backend uses "gradial"
+  question_5: QuestionAnswer;    // Frequency (frequent/occasional)
+  question_6: QuestionAnswer;    // Timing (daytime/nighttime)
+  question_7: QuestionAnswer;    // Severity (1-10)
+  question_8: QuestionAnswer;    // Relief factor (notes)
+  question_9?: QuestionAnswer;   // Additional question
+  question_10?: QuestionAnswer;  // Additional question
+  question_11?: QuestionAnswer;  // Additional question
+  question_12?: QuestionAnswer;  // Additional question
+  question_13?: QuestionAnswer;  // Additional question
+  question_14?: QuestionAnswer;  // Additional question
+}
+
+interface SectionBData {
+  operator_observation: QuestionAnswer;
+  initial_assessment: QuestionAnswer; // pass/refer
 }
 
 export default function HistoryTakingScreen() {
@@ -49,62 +67,96 @@ export default function HistoryTakingScreen() {
   const [currentStep, setCurrentStep] = useState(1);
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
-  // Question 1
+  // Question 1: Blurred Vision
   const [blurredVision, setBlurredVision] = useState<'yes' | 'no' | null>(null);
   const [blurredVisionNotes, setBlurredVisionNotes] = useState('');
 
-  // Question 2
+  // Question 2: Eye Pain
   const [eyePain, setEyePain] = useState<'yes' | 'no' | null>(null);
   const [eyePainNotes, setEyePainNotes] = useState('');
 
-  // Question 3 & 4
+  // Question 3: Pain Location & Question 4: Onset
   const [painLocation, setPainLocation] = useState<'localise' | 'radiate' | null>(null);
-  const [onSet, setOnSet] = useState<'gradual' | 'sudden' | null>(null);
+  const [onSet, setOnSet] = useState<'gradial' | 'sudden' | null>(null); // Note: backend uses "gradial"
 
-  // Question 5 & 6
+  // Question 5: Frequency & Question 6: Timing
   const [frequency, setFrequency] = useState<'frequent' | 'occasional' | null>(null);
   const [timing, setTiming] = useState<'daytime' | 'nighttime' | null>(null);
 
-  // Question 7
+  // Question 7: Severity
   const [severityValue, setSeverityValue] = useState(5);
 
-  // Question 8
+  // Question 8: Relief Factor
   const [reliefFactor, setReliefFactor] = useState('');
 
-  // Pre-fill form from existing data
+  // Section B: Operator Notes
+  const [operatorObservation, setOperatorObservation] = useState('');
+  const [initialAssessment, setInitialAssessment] = useState<'pass' | 'refer' | null>(null);
+
+  // Pre-fill form from existing data (backend uses question_1, question_2, etc.)
   useEffect(() => {
-    if (data?.data?.section_a && !hasLoadedData) {
-      const sectionA = data.data.section_a as SectionAData;
-      setBlurredVision(sectionA.blurred_vision ?? null);
-      setBlurredVisionNotes(sectionA.blurred_vision_notes ?? '');
-      setEyePain(sectionA.eye_pain ?? null);
-      setEyePainNotes(sectionA.eye_pain_notes ?? '');
-      setPainLocation(sectionA.pain_location ?? null);
-      setOnSet(sectionA.onset ?? null);
-      setFrequency(sectionA.frequency ?? null);
-      setTiming(sectionA.timing ?? null);
-      setSeverityValue(sectionA.severity ?? 5);
-      setReliefFactor(sectionA.relief_factor ?? '');
+    if (data?.data && !hasLoadedData) {
+      const sectionA = data.data.section_a as SectionAData | undefined;
+      const sectionB = data.data.section_b as SectionBData | undefined;
+
+      if (sectionA) {
+        // Question 1: Blurred Vision
+        setBlurredVision((sectionA.question_1?.answer as 'yes' | 'no') ?? null);
+        setBlurredVisionNotes(sectionA.question_1?.notes ?? '');
+
+        // Question 2: Eye Pain
+        setEyePain((sectionA.question_2?.answer as 'yes' | 'no') ?? null);
+        setEyePainNotes(sectionA.question_2?.notes ?? '');
+
+        // Question 3: Pain Location
+        setPainLocation((sectionA.question_3?.answer as 'localise' | 'radiate') ?? null);
+
+        // Question 4: Onset (backend uses "gradial")
+        setOnSet((sectionA.question_4?.answer as 'gradial' | 'sudden') ?? null);
+
+        // Question 5: Frequency
+        setFrequency((sectionA.question_5?.answer as 'frequent' | 'occasional') ?? null);
+
+        // Question 6: Timing
+        setTiming((sectionA.question_6?.answer as 'daytime' | 'nighttime') ?? null);
+
+        // Question 7: Severity
+        const severity = parseInt(sectionA.question_7?.answer ?? '5', 10);
+        setSeverityValue(isNaN(severity) ? 5 : severity);
+
+        // Question 8: Relief Factor
+        setReliefFactor(sectionA.question_8?.answer ?? '');
+      }
+
+      if (sectionB) {
+        setOperatorObservation(sectionB.operator_observation?.answer ?? '');
+        setInitialAssessment((sectionB.initial_assessment?.answer as 'pass' | 'refer') ?? null);
+      }
+
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build section_a data from form state
+  // Build section_a data matching backend structure
   const buildSectionAData = (): SectionAData => ({
-    blurred_vision: blurredVision,
-    blurred_vision_notes: blurredVisionNotes,
-    eye_pain: eyePain,
-    eye_pain_notes: eyePainNotes,
-    pain_location: painLocation,
-    onset: onSet,
-    frequency: frequency,
-    timing: timing,
-    severity: severityValue,
-    relief_factor: reliefFactor,
+    question_1: { answer: blurredVision ?? '', notes: blurredVisionNotes },
+    question_2: { answer: eyePain ?? '', notes: eyePainNotes },
+    question_3: { answer: painLocation ?? '' },
+    question_4: { answer: onSet ?? '' }, // Note: backend uses "gradial"
+    question_5: { answer: frequency ?? '' },
+    question_6: { answer: timing ?? '' },
+    question_7: { answer: String(severityValue) },
+    question_8: { answer: reliefFactor },
+  });
+
+  // Build section_b data matching backend structure
+  const buildSectionBData = (): SectionBData => ({
+    operator_observation: { answer: operatorObservation },
+    initial_assessment: { answer: initialAssessment ?? '' },
   });
 
   const handleNext = () => {
-    if (currentStep < 5) {
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     } else {
       // Save and navigate back
@@ -112,7 +164,7 @@ export default function HistoryTakingScreen() {
         {
           registration_id: registrationId,
           section_a: buildSectionAData(),
-          section_b: data?.data?.section_b ?? {}, // Preserve existing section_b if any
+          section_b: buildSectionBData(),
         },
         {
           onSuccess: () => {
@@ -228,8 +280,8 @@ export default function HistoryTakingScreen() {
 
               <RadioButton
                 label="Gradual"
-                selected={onSet === 'gradual'}
-                onPress={() => setOnSet('gradual')}
+                selected={onSet === 'gradial'}
+                onPress={() => setOnSet('gradial')}
               />
               <RadioButton
                 label="Sudden"
@@ -312,6 +364,47 @@ export default function HistoryTakingScreen() {
           </>
         );
 
+      case 6:
+        // Section B: Operator Notes & Initial Assessment
+        return (
+          <>
+            <View style={styles.questionContainer}>
+              <ThemedText style={styles.questionNumber}>Operator Observation</ThemedText>
+
+              <TextInput
+                placeholder="Enter operator observations"
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={6}
+                value={operatorObservation}
+                onChangeText={setOperatorObservation}
+                style={[
+                  styles.textArea,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.questionContainer}>
+              <ThemedText style={styles.questionNumber}>Initial Assessment</ThemedText>
+
+              <RadioButton
+                label="Pass"
+                selected={initialAssessment === 'pass'}
+                onPress={() => setInitialAssessment('pass')}
+              />
+              <RadioButton
+                label="Refer"
+                selected={initialAssessment === 'refer'}
+                onPress={() => setInitialAssessment('refer')}
+              />
+            </View>
+          </>
+        );
+
       default:
         return null;
     }
@@ -354,7 +447,9 @@ export default function HistoryTakingScreen() {
         <View style={styles.content}>
           <View style={styles.sectionCard}>
             <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
-              <ThemedText style={styles.sectionTitle}>Section A : General Question</ThemedText>
+              <ThemedText style={styles.sectionTitle}>
+                {currentStep <= 5 ? 'Section A : General Question' : 'Section B : Operator Notes'}
+              </ThemedText>
             </View>
 
             <View style={styles.questionContent}>
@@ -382,9 +477,9 @@ export default function HistoryTakingScreen() {
           ) : (
             <>
               <ThemedText style={styles.nextButtonText}>
-                {currentStep === 5 ? 'Save' : 'Next'}
+                {currentStep === 6 ? 'Save' : 'Next'}
               </ThemedText>
-              {currentStep < 5 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+              {currentStep < 6 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
             </>
           )}
         </TouchableOpacity>

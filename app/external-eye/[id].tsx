@@ -75,31 +75,26 @@ const ALIGNMENT_OPTIONS: DropdownOption[] = [
   { value: 'hypertropia', label: 'Hypertropia' },
 ];
 
-// External Eye Examination data structure
-interface AnteriorData {
-  right_eye: {
-    eyelids_lashes: string;
-    conjunctiva: string;
-    cornea: string;
-    iris_pupil: string;
-    lens: string;
-    alignment: string;
-    observation: string;
-  };
-  left_eye: {
-    eyelids_lashes: string;
-    conjunctiva: string;
-    cornea: string;
-    iris_pupil: string;
-    lens: string;
-    alignment: string;
-    observation: string;
-  };
+// Backend API structure for External Eye Examination
+interface EyeAnteriorData {
+  eyelids_lashes: string;
+  conjunctiva: string;
+  cornea: string;
+  iris_pupil: string;
+  lens: string;
+  alignment_eyes: string;
+  operator_observation: string;
 }
 
-interface FundusData {
-  observation: string;
-  result: 'pass' | 'refer' | null;
+interface OperatorNotes {
+  operator_observation: string;
+  test_result: string;
+}
+
+interface AnteriorData {
+  right_eye: EyeAnteriorData;
+  left_eye: EyeAnteriorData;
+  operator_notes: OperatorNotes;
 }
 
 export default function ExternalEyeExaminationScreen() {
@@ -153,7 +148,7 @@ export default function ExternalEyeExaminationScreen() {
   // Pre-fill form from existing data
   useEffect(() => {
     if (data?.data && !hasLoadedData) {
-      const { anterior, fundus } = data.data;
+      const { anterior } = data.data;
 
       if (anterior) {
         const ant = anterior as unknown as AnteriorData;
@@ -163,29 +158,26 @@ export default function ExternalEyeExaminationScreen() {
         setRightCornea(ant.right_eye?.cornea ?? '');
         setRightIrisPupil(ant.right_eye?.iris_pupil ?? '');
         setRightLens(ant.right_eye?.lens ?? '');
-        setRightAlignment(ant.right_eye?.alignment ?? '');
-        setRightObservation(ant.right_eye?.observation ?? '');
+        setRightAlignment(ant.right_eye?.alignment_eyes ?? '');
+        setRightObservation(ant.right_eye?.operator_observation ?? '');
         // Left eye
         setLeftEyelidsLashes(ant.left_eye?.eyelids_lashes ?? '');
         setLeftConjunctiva(ant.left_eye?.conjunctiva ?? '');
         setLeftCornea(ant.left_eye?.cornea ?? '');
         setLeftIrisPupil(ant.left_eye?.iris_pupil ?? '');
         setLeftLens(ant.left_eye?.lens ?? '');
-        setLeftAlignment(ant.left_eye?.alignment ?? '');
-        setLeftObservation(ant.left_eye?.observation ?? '');
-      }
-
-      if (fundus) {
-        const fun = fundus as unknown as FundusData;
-        setFinalObservation(fun.observation ?? '');
-        setTestResult(fun.result ?? null);
+        setLeftAlignment(ant.left_eye?.alignment_eyes ?? '');
+        setLeftObservation(ant.left_eye?.operator_observation ?? '');
+        // Operator notes
+        setFinalObservation(ant.operator_notes?.operator_observation ?? '');
+        setTestResult((ant.operator_notes?.test_result as 'pass' | 'refer') ?? null);
       }
 
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build anterior data from form state
+  // Build anterior data from form state matching backend structure
   const buildAnteriorData = (): AnteriorData => ({
     right_eye: {
       eyelids_lashes: rightEyelidsLashes,
@@ -193,8 +185,8 @@ export default function ExternalEyeExaminationScreen() {
       cornea: rightCornea,
       iris_pupil: rightIrisPupil,
       lens: rightLens,
-      alignment: rightAlignment,
-      observation: rightObservation,
+      alignment_eyes: rightAlignment,
+      operator_observation: rightObservation,
     },
     left_eye: {
       eyelids_lashes: leftEyelidsLashes,
@@ -202,15 +194,13 @@ export default function ExternalEyeExaminationScreen() {
       cornea: leftCornea,
       iris_pupil: leftIrisPupil,
       lens: leftLens,
-      alignment: leftAlignment,
-      observation: leftObservation,
+      alignment_eyes: leftAlignment,
+      operator_observation: leftObservation,
     },
-  });
-
-  // Build fundus data from form state
-  const buildFundusData = (): FundusData => ({
-    observation: finalObservation,
-    result: testResult,
+    operator_notes: {
+      operator_observation: finalObservation,
+      test_result: testResult ?? '',
+    },
   });
 
   const handleTakePicture = async () => {
@@ -238,12 +228,11 @@ export default function ExternalEyeExaminationScreen() {
     if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Save form data
+      // Save form data - operator_notes is now part of anterior
       saveExternalEye(
         {
           registration_id: registrationId,
           anterior: buildAnteriorData() as unknown as Record<string, unknown>,
-          fundus: buildFundusData() as unknown as Record<string, unknown>,
         },
         {
           onSuccess: () => {

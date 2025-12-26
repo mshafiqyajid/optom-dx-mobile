@@ -97,7 +97,7 @@ export interface ExternalEyeExamination {
 export interface ExternalEyeExaminationRequest {
   registration_id: number;
   anterior: Record<string, unknown>;
-  fundus: Record<string, unknown>;
+  fundus?: Record<string, unknown>; // Optional - operator_notes is now in anterior
 }
 
 export interface ExternalEyeExaminationResponse {

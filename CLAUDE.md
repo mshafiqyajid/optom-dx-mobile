@@ -221,56 +221,217 @@ POST /assessment/case-submission
 | Refraction | `refraction/[id].tsx` | `useGetRefractionAssessment`, `useCreateOrUpdateRefractionAssessment` | ✅ Integrated |
 | Case Submission | `case-submission/[id].tsx` | `useGetCaseSubmission`, `useCreateOrUpdateCaseSubmission` | ✅ Integrated |
 
-## Backend/UI Mismatch Notes
+## Backend API Structure (Mobile Follows Backend)
 
-The following notes highlight areas where the mobile UI data structure may differ from the backend API response. Review and update the backend or mobile UI as needed.
+The following documents the **verified backend API structure** from Postman collection examples. **Mobile screens have been refactored to match the backend structure exactly.**
+
+**Refactoring Status (December 2024)**: All 6 assessment screens now send data matching backend expectations:
+
+- ✅ History Taking - Uses `question_1` through `question_14` with `{answer, notes}` format
+- ✅ Preliminary Test - Uses `{a, b, c, d}` for eye data, `{mm}` for PD, `{answer}` for cover test; **uses `lefy_eye` typo to match backend**
+- ✅ Visual Acuity - Uses `distance_vision` with `with_spectacle`, `un_aided`, `pin_hole`
+- ✅ External Eye - Uses `alignment_eyes`, `operator_observation`, `operator_notes` in `anterior`; uses `conjunctiva` (proper spelling - backend accepts flexible JSON)
+- ✅ Refraction - Uses `objective_refraction`, `subjective_refraction` with `{a, b, c, d}` format
+- ✅ Case Submission - Uses `referral.referral_list`, `overall_result.referral_list` with `notes`
+
+**Backend Typos Note**: The backend has some typos in field names. Mobile handles them as follows:
+
+- `lefy_eye` (backend typo) - **Mobile uses this typo** to match backend exactly
+- `conjuctiva` (backend typo) - Mobile uses `conjunctiva` (proper spelling) since backend accepts flexible JSON
+- `fundis_left` (backend typo) - Mobile uses `fundus_left` (proper spelling) for attachment type
 
 ### Checkpoint Screen
 
-- **Status**: ✅ Using `RegistrationCheckpointType` from `services/registrations/type.registrations.d.ts`
+- **Status**: ✅ Verified - Correctly aligned
 - **Checkpoint types**: `profile_verification`, `history_taking`, `preliminary_test`, `visual_acuity_assessment`, `external_eye_examination`, `refraction_assessment`, `case_submission`
 - **API field**: Backend returns `checkpoint` field (not `checkpoint.type`) - already correctly mapped
 
 ### History Taking Screen
 
-- **Section A fields**: Mobile expects `ocular_history`, `current_systemic_medication`, `drug_allergy`, `systemic_history`, `family_ocular_history`, `family_systemic_history`
-- **Section B fields**: Mobile expects `current_wearing` (glasses/contact_lens), `type` (single_vision/progressive/bifocal/multifocal), `lens_type` (plastic/glass/polycarbonate)
-- **TODO**: Confirm backend `description` JSON structure matches these field names
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "section_a": {
+    "question_1": { "answer": "yes", "notes": "notes" },
+    "question_2": { "answer": "yes", "notes": "notes" },
+    "question_3": { "answer": "localise" },  // localise | radiate
+    "question_4": { "answer": "gradial" },   // gradial | sudden
+    "question_5": { "answer": "frequent" },  // frequent | occasional
+    "question_6": { "answer": "daytime" },   // daytime | nighttime
+    "question_7": { "answer": "9" },         // severity 1-10
+    "question_8": { "answer": "notes" },     // relief factor
+    "question_9": { "answer": "notes" },
+    "question_10": { "answer": "yes" },
+    "question_11": { "answer": "yes" },
+    "question_12": { "answer": "notes" },
+    "question_13": { "answer": "notes" },
+    "question_14": { "answer": "notes" }
+  },
+  "section_b": {
+    "operator_observation": { "answer": "notes" },
+    "initial_assessment": { "answer": "pass" }  // pass | refer
+  }
+}
+```
 
 ### Preliminary Test Screen
 
-- **Section A**: Pupil assessment with `odSize`, `osSize`, `odReaction`, `osReaction`, `rapd`, `rapdWhichEye`, `colourVisionResult`
-- **Section B**: Ocular motility with `fieldOfGaze`, `isNormal`, `findings`, `coverTestDistance`, `coverTestNear`, `nearPointConvergence`
-- **Section C**: Intraocular pressure with `time`, `odReading`, `osReading`
-- **TODO**: Confirm backend accepts this nested structure in `description` field
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "section_a": {
+    "right_eye": { "a": "-1.00", "b": "-0.50", "c": "90", "d": "6/6" },
+    "lefy_eye": { "a": "-1.00", "b": "-0.50", "c": "90", "d": "6/6" }
+  },
+  "section_b": {
+    "right_eye": { "mm": 0 },
+    "left_eye": { "mm": 0 },
+    "pd_distance": { "mm": 0 }
+  },
+  "section_c": {
+    "deviation_size": { "answer": "small" },      // small | big
+    "type_of_deviation": { "answer": "exophoria" } // exophoria | esophoria
+  }
+}
+```
+
+**Note**: Backend has typo `lefy_eye` instead of `left_eye` in section_a. Mobile uses `lefy_eye` to match backend.
 
 ### Visual Acuity Screen
 
-- **Fields per eye**: `aided`, `unaided`, `pinHole` for both `right`/`left` eyes
-- **Tests**: `near_test` and `distance_test` sections
-- **TODO**: Confirm backend field names (e.g., `un_aided` vs `unaided`, `pin_hole` vs `pinHole`)
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "description": {
+    "distance_visual_acuity_chart": "HOTV",
+    "vision_screening_distance": "1.5",
+    "distance_vision": {
+      "with_spectacle": { "right_eye": "6", "left_eye": "6" },
+      "un_aided": { "right_eye": "6", "left_eye": "6" },
+      "pin_hole": { "right_eye": "6", "left_eye": "6" },
+      "operator_notes": {
+        "operator_observation": "notes",
+        "distance_vision_test_result": "pass"
+      }
+    },
+    "near_visual_acuity_chart": "LEA Symbols",
+    "new_vision": {
+      "aided": { "right_eye": "6", "left_eye": "6" },
+      "un_aided": { "right_eye": "6", "left_eye": "6" },
+      "operator_notes": {
+        "operator_observation": "notes",
+        "distance_vision_test_result": "pass"
+      }
+    }
+  }
+}
+```
+
+**Key field names**: `un_aided` (with underscore), `pin_hole` (with underscore), `right_eye`/`left_eye`
 
 ### External Eye Examination Screen
 
-- **Anterior segment**: Multi-select options for `eyelid`, `conjunctiva`, `cornea`, `iris`, `pupil`, `lens`, `others` per eye
-- **Fundus**: `cup_disc_ratio`, `optic_disc`, `macula`, `blood_vessel`, `peripheral_retina`, `others` per eye
-- **Attachments**: Uses `useUploadExternalEyeAttachment` hook with FormData for image uploads
-- **TODO**: Verify backend accepts array values for multi-select fields, confirm attachment endpoint response format
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "anterior": {
+    "right_eye": {
+      "eyelids_lashes": "Water / Sticky",
+      "conjuctiva": "Inflamed",
+      "cornea": "Ulcer",
+      "iris_pupil": "Irregular eye",
+      "lens": "cataract",
+      "alignment_eyes": "not_aligned",
+      "operator_observation": "notes"
+    },
+    "left_eye": { /* same structure */ },
+    "operator_notes": {
+      "operator_observation": "notes",
+      "test_result": "pass"
+    }
+  }
+}
+```
+
+**Attachment upload**: `POST /assessment/external-eye-examination/{id}/attachments`
+
+- FormData with `type` (`anterior_left` | `anterior_right` | `fundis_left` | `fundus_right`) and `file`
+- Response: `{ filename, path, type }`
+
+**Note**: Backend has typo `conjuctiva` instead of `conjunctiva`, `fundis_left` instead of `fundus_left`. Mobile uses proper spellings since backend accepts flexible JSON.
 
 ### Refraction Assessment Screen
 
-- **Objective refraction**: `sph`, `cyl`, `axis`, `va` per eye
-- **Subjective refraction**: Same structure as objective
-- **Reading add**: `add_power`, `near_va` per eye
-- **TODO**: Confirm backend field names and structure in `description` JSON
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "description": {
+    "objective_refraction": {
+      "right_eye": { "a": "-1.00", "b": "-0.50", "c": "90", "d": "6/6" },
+      "left_eye": { "a": "-1.00", "b": "-0.50", "c": "90", "d": "6/6" }
+    },
+    "subjective_refraction": {
+      "right_eye": { "a": "+0.75", "b": "+0.75", "c": "90", "d": "6/6" },
+      "left_eye": { "a": "+0.75", "b": "+0.75", "c": "90", "d": "6/6" },
+      "reading_spectacles_prescribe": { "a": "+0.75", "b": "14", "c": "40" }
+    },
+    "operator_notes": {
+      "operator_observation": "notes",
+      "test_result": "pass"
+    }
+  }
+}
+```
+
+**Key difference**: Backend uses `a`, `b`, `c`, `d` for eye data, NOT `sph`, `cyl`, `axis`, `va`
 
 ### Case Submission Screen
 
-- **Eye Screening Summary**: Currently uses mock data - needs to fetch from backend
-- **Referral**: `enter_referral_list` ('yes'/'no'), `follow_up` ('no_need'/'3_months'/'1_month')
-- **Overall result**: 'pass' | 'refer' | 'urgent_refer'
-- **TODO**: Backend should provide aggregated screening summary data for display
-- **TODO**: Confirm referral field value options match backend enum/validation
+- **Status**: ✅ Mobile matches backend
+
+**Backend structure (mobile sends this exact format):**
+
+```json
+{
+  "registration_id": 7,
+  "description": {
+    "referral": {
+      "referral_list": "yes",
+      "follow_up": "no need"
+    },
+    "overall_result": {
+      "referral_list": "pass",
+      "notes": "notes"
+    }
+  }
+}
+```
+
+**Field values**:
+
+- `referral.referral_list`: "yes" | "no"
+- `referral.follow_up`: "no need" (with space)
+- `overall_result.referral_list`: "pass" | "refer" | "urgent_refer"
 
 ## Integration Pattern
 

@@ -18,31 +18,39 @@ import {
   View,
 } from 'react-native';
 
-// Section data interfaces
+// Backend API structure for Preliminary Test
+// Section A: Old Prescription uses {a, b, c, d} format
+interface EyePrescription {
+  a: string; // sphere
+  b: string; // cylinder
+  c: string; // axis
+  d: string; // VA
+}
+
 interface SectionAData {
-  right_eye: {
-    sphere: string;
-    cylinder: string;
-    axis: string;
-    va: string;
-  };
-  left_eye: {
-    sphere: string;
-    cylinder: string;
-    axis: string;
-    va: string;
-  };
+  right_eye: EyePrescription;
+  left_eye: EyePrescription;
+}
+
+// Section B: Pupillary Distance uses {mm: value} format
+interface EyePD {
+  mm: number;
 }
 
 interface SectionBData {
-  right_eye_pd: string;
-  left_eye_pd: string;
-  pd_distance: string;
+  right_eye: EyePD;
+  left_eye: EyePD;
+  pd_distance: EyePD;
+}
+
+// Section C: Cover Test uses {answer: value} format
+interface AnswerField {
+  answer: string;
 }
 
 interface SectionCData {
-  deviation_size: 'small' | 'big' | null;
-  deviation_type: 'exophoria' | 'esophoria' | null;
+  deviation_size: AnswerField;
+  type_of_deviation: AnswerField;
 }
 
 export default function PreliminaryTestScreen() {
@@ -83,65 +91,69 @@ export default function PreliminaryTestScreen() {
   const [deviationSize, setDeviationSize] = useState<'small' | 'big' | null>(null);
   const [deviationType, setDeviationType] = useState<'exophoria' | 'esophoria' | null>(null);
 
-  // Pre-fill form from existing data
+  // Pre-fill form from existing data (backend uses a, b, c, d format)
   useEffect(() => {
     if (data?.data && !hasLoadedData) {
       const { section_a, section_b, section_c } = data.data;
 
       if (section_a) {
         const sectionA = section_a as SectionAData;
-        setRightEyeSphere(sectionA.right_eye?.sphere ?? '');
-        setRightEyeCylinder(sectionA.right_eye?.cylinder ?? '');
-        setRightEyeAxis(sectionA.right_eye?.axis ?? '');
-        setRightEyeVA(sectionA.right_eye?.va ?? '');
-        setLeftEyeSphere(sectionA.left_eye?.sphere ?? '');
-        setLeftEyeCylinder(sectionA.left_eye?.cylinder ?? '');
-        setLeftEyeAxis(sectionA.left_eye?.axis ?? '');
-        setLeftEyeVA(sectionA.left_eye?.va ?? '');
+        // Right eye uses a, b, c, d
+        setRightEyeSphere(sectionA.right_eye?.a ?? '');
+        setRightEyeCylinder(sectionA.right_eye?.b ?? '');
+        setRightEyeAxis(sectionA.right_eye?.c ?? '');
+        setRightEyeVA(sectionA.right_eye?.d ?? '');
+        // Left eye (note: backend uses "lefy_eye" typo)
+        setLeftEyeSphere(sectionA.lefy_eye?.a ?? '');
+        setLeftEyeCylinder(sectionA.lefy_eye?.b ?? '');
+        setLeftEyeAxis(sectionA.lefy_eye?.c ?? '');
+        setLeftEyeVA(sectionA.lefy_eye?.d ?? '');
       }
 
       if (section_b) {
         const sectionB = section_b as SectionBData;
-        setRightEyePD(sectionB.right_eye_pd ?? '');
-        setLeftEyePD(sectionB.left_eye_pd ?? '');
-        setPdDistance(sectionB.pd_distance ?? '');
+        // Backend uses {mm: value} structure
+        setRightEyePD(String(sectionB.right_eye?.mm ?? ''));
+        setLeftEyePD(String(sectionB.left_eye?.mm ?? ''));
+        setPdDistance(String(sectionB.pd_distance?.mm ?? ''));
       }
 
       if (section_c) {
         const sectionC = section_c as SectionCData;
-        setDeviationSize(sectionC.deviation_size ?? null);
-        setDeviationType(sectionC.deviation_type ?? null);
+        // Backend uses {answer: value} structure
+        setDeviationSize((sectionC.deviation_size?.answer as 'small' | 'big') ?? null);
+        setDeviationType((sectionC.type_of_deviation?.answer as 'exophoria' | 'esophoria') ?? null);
       }
 
       setHasLoadedData(true);
     }
   }, [data, hasLoadedData]);
 
-  // Build section data from form state
+  // Build section data matching backend structure
   const buildSectionAData = (): SectionAData => ({
     right_eye: {
-      sphere: rightEyeSphere,
-      cylinder: rightEyeCylinder,
-      axis: rightEyeAxis,
-      va: rightEyeVA,
+      a: rightEyeSphere,
+      b: rightEyeCylinder,
+      c: rightEyeAxis,
+      d: rightEyeVA,
     },
-    left_eye: {
-      sphere: leftEyeSphere,
-      cylinder: leftEyeCylinder,
-      axis: leftEyeAxis,
-      va: leftEyeVA,
+    lefy_eye: { // Note: Backend typo - must use "lefy_eye"
+      a: leftEyeSphere,
+      b: leftEyeCylinder,
+      c: leftEyeAxis,
+      d: leftEyeVA,
     },
   });
 
   const buildSectionBData = (): SectionBData => ({
-    right_eye_pd: rightEyePD,
-    left_eye_pd: leftEyePD,
-    pd_distance: pdDistance,
+    right_eye: { mm: parseFloat(rightEyePD) || 0 },
+    left_eye: { mm: parseFloat(leftEyePD) || 0 },
+    pd_distance: { mm: parseFloat(pdDistance) || 0 },
   });
 
   const buildSectionCData = (): SectionCData => ({
-    deviation_size: deviationSize,
-    deviation_type: deviationType,
+    deviation_size: { answer: deviationSize ?? '' },
+    type_of_deviation: { answer: deviationType ?? '' },
   });
 
   const handleNext = () => {
