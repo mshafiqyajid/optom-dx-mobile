@@ -62,6 +62,10 @@ export default function HomeScreen() {
     router.push(`/event/${eventId}`);
   };
 
+  const handleProfilePress = () => {
+    router.push('/(tabs)/profile');
+  };
+
   return (
     <ThemedView style={Layout.container}>
       <ScrollView
@@ -77,6 +81,7 @@ export default function HomeScreen() {
             role="Operator"
             online={true}
             size="medium"
+            onAvatarPress={handleProfilePress}
           />
         </View>
 
