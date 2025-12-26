@@ -142,3 +142,120 @@ When creating a new screen in the `app/` directory, you **MUST** register it in 
 - `case-submission/[id]` - Case Submission
 
 **Failure to register screens will result in double headers appearing on the screen.**
+
+## API Services
+
+The mobile app has TanStack Query services ready for backend integration in `services/`:
+
+### Available Services
+
+| Service | File | Hooks |
+|---------|------|-------|
+| **Auth** | `auth/` | `useLogin`, `useLogout`, `useRegister` |
+| **Events** | `events/` | `useGetEvents`, `useGetEventById`, `useCreateEvent`, `useUpdateEvent`, `useDeleteEvent`, `useCheckInEvent` |
+| **Patients** | `patients/` | `useGetPatients`, `useGetPatientById`, `useCreatePatient`, `useUpdatePatient` |
+| **Registrations** | `registrations/` | `useGetRegistrations`, `useCreateRegistration`, `useGetCheckpoints`, `useGetCheckpoint` |
+| **Assessments** | `assessments/` | See below |
+
+### Assessment Hooks
+
+| Assessment | Get Hook | Mutation Hook |
+|------------|----------|---------------|
+| History Taking | `useGetHistoryTaking(registrationId)` | `useCreateOrUpdateHistoryTaking()` |
+| Preliminary Test | `useGetPreliminaryTest(registrationId)` | `useCreateOrUpdatePreliminaryTest()` |
+| Visual Acuity | `useGetVisualAcuityAssessment(registrationId)` | `useCreateOrUpdateVisualAcuityAssessment()` |
+| External Eye | `useGetExternalEyeExamination(registrationId)` | `useCreateOrUpdateExternalEyeExamination()`, `useUploadExternalEyeAttachment(registrationId)` |
+| Refraction | `useGetRefractionAssessment(registrationId)` | `useCreateOrUpdateRefractionAssessment()` |
+| Case Submission | `useGetCaseSubmission(registrationId)` | `useCreateOrUpdateCaseSubmission()` |
+
+### API Endpoints
+
+```
+# Auth
+POST /login
+POST /logout
+POST /register
+
+# Events
+GET    /events
+GET    /events/{id}
+POST   /events
+PUT    /events/{id}
+DELETE /events/{id}
+GET    /events/{id}/check-in
+
+# Registrations (PUBLIC - no auth)
+GET  /registrations
+POST /registrations
+GET  /registrations/{id}/checkpoints
+GET  /registrations/{id}/checkpoints/{checkpoint}
+
+# Assessments
+GET  /assessment/history-taking/{registrationId}
+POST /assessment/history-taking
+GET  /assessment/preliminary-test/{registrationId}
+POST /assessment/preliminary-test
+GET  /assessment/visual-acuity-assessment/{registrationId}
+POST /assessment/visual-acuity-assessment
+GET  /assessment/external-eye-examination/{registrationId}
+POST /assessment/external-eye-examination
+POST /assessment/external-eye-examination/{registrationId}/attachments
+GET  /assessment/refraction-assessment/{registrationId}
+POST /assessment/refraction-assessment
+GET  /assessment/case-submission/{registrationId}
+POST /assessment/case-submission
+```
+
+## Mobile Screens Integration Status
+
+| Screen | File | API Integration | Status |
+|--------|------|-----------------|--------|
+| Login | `(auth)/login.tsx` | `useLogin` | Pending |
+| Home | `(tabs)/index.tsx` | `useGetEvents` | Pending |
+| Event Details | `event/[id].tsx` | `useGetEventById` | Pending |
+| Checkpoint | `checkpoint/[id].tsx` | `useGetCheckpoints` | Pending |
+| History Taking | `history-taking/[id].tsx` | `useGetHistoryTaking`, `useCreateOrUpdateHistoryTaking` | Pending |
+| Preliminary Test | `preliminary-test/[id].tsx` | `useGetPreliminaryTest`, `useCreateOrUpdatePreliminaryTest` | Pending |
+| Visual Acuity | `visual-acuity/[id].tsx` | `useGetVisualAcuityAssessment`, `useCreateOrUpdateVisualAcuityAssessment` | Pending |
+| External Eye | `external-eye/[id].tsx` | `useGetExternalEyeExamination`, `useCreateOrUpdateExternalEyeExamination`, `useUploadExternalEyeAttachment` | Pending |
+| Refraction | `refraction/[id].tsx` | `useGetRefractionAssessment`, `useCreateOrUpdateRefractionAssessment` | Pending |
+| Case Submission | `case-submission/[id].tsx` | `useGetCaseSubmission`, `useCreateOrUpdateCaseSubmission` | Pending |
+
+## Integration Pattern
+
+When integrating API with a screen:
+
+```tsx
+import { useGetHistoryTaking, useCreateOrUpdateHistoryTaking } from '@/services';
+
+export default function HistoryTakingScreen() {
+  const { id } = useLocalSearchParams();
+  const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
+
+  // Fetch existing data
+  const { data, isLoading, error } = useGetHistoryTaking(registrationId);
+
+  // Mutation for save
+  const { mutate: saveHistoryTaking, isPending } = useCreateOrUpdateHistoryTaking();
+
+  const handleSave = () => {
+    saveHistoryTaking({
+      registration_id: registrationId,
+      section_a: { /* form data */ },
+      section_b: { /* form data */ },
+    }, {
+      onSuccess: () => router.back(),
+      onError: (error) => Alert.alert('Error', error.message),
+    });
+  };
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data) {
+      // Set form state from data.data
+    }
+  }, [data]);
+
+  // ... rest of component
+}
+```
