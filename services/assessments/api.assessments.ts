@@ -32,13 +32,10 @@ const AssessmentAPI = {
   },
 
   async createOrUpdateHistoryTaking(data: HistoryTakingRequest): Promise<HistoryTakingResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('section_a', JSON.stringify(data.section_a));
-    formData.append('section_b', JSON.stringify(data.section_b));
-
-    const response = await api.post('/assessment/history-taking', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/history-taking', {
+      registration_id: data.registration_id,
+      section_a: data.section_a,
+      section_b: data.section_b,
     });
     return response.data;
   },
@@ -54,14 +51,11 @@ const AssessmentAPI = {
   async createOrUpdatePreliminaryTest(
     data: PreliminaryTestRequest
   ): Promise<PreliminaryTestResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('section_a', JSON.stringify(data.section_a));
-    formData.append('section_b', JSON.stringify(data.section_b));
-    formData.append('section_c', JSON.stringify(data.section_c));
-
-    const response = await api.post('/assessment/preliminary-test', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/preliminary-test', {
+      registration_id: data.registration_id,
+      section_a: data.section_a,
+      section_b: data.section_b,
+      section_c: data.section_c,
     });
     return response.data;
   },
@@ -77,12 +71,9 @@ const AssessmentAPI = {
   async createOrUpdateVisualAcuityAssessment(
     data: VisualAcuityAssessmentRequest
   ): Promise<VisualAcuityAssessmentResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('description', JSON.stringify(data.description));
-
-    const response = await api.post('/assessment/visual-acuity-assessment', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/visual-acuity-assessment', {
+      registration_id: data.registration_id,
+      description: data.description,
     });
     return response.data;
   },
@@ -100,13 +91,10 @@ const AssessmentAPI = {
   async createOrUpdateExternalEyeExamination(
     data: ExternalEyeExaminationRequest
   ): Promise<ExternalEyeExaminationResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('anterior', JSON.stringify(data.anterior));
-    formData.append('fundus', JSON.stringify(data.fundus));
-
-    const response = await api.post('/assessment/external-eye-examination', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/external-eye-examination', {
+      registration_id: data.registration_id,
+      anterior: data.anterior,
+      fundus: data.fundus,
     });
     return response.data;
   },
@@ -145,12 +133,9 @@ const AssessmentAPI = {
   async createOrUpdateRefractionAssessment(
     data: RefractionAssessmentRequest
   ): Promise<RefractionAssessmentResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('description', JSON.stringify(data.description));
-
-    const response = await api.post('/assessment/refraction-assessment', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/refraction-assessment', {
+      registration_id: data.registration_id,
+      description: data.description,
     });
     return response.data;
   },
@@ -166,12 +151,9 @@ const AssessmentAPI = {
   async createOrUpdateCaseSubmission(
     data: CaseSubmissionRequest
   ): Promise<CaseSubmissionResponse> {
-    const formData = new FormData();
-    formData.append('registration_id', String(data.registration_id));
-    formData.append('description', JSON.stringify(data.description));
-
-    const response = await api.post('/assessment/case-submission', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await api.post('/assessment/case-submission', {
+      registration_id: data.registration_id,
+      description: data.description,
     });
     return response.data;
   },

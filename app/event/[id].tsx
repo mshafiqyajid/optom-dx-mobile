@@ -1,14 +1,15 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
-import { MOCK_PATIENTS, type Patient } from '@/constants/mock-data';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useGetEventById } from '@/services/events/store.events';
+import { useGetRegistrations } from '@/services/registrations/store.registrations';
+import type { Registration } from '@/services/registrations/type.registrations';
 import { formatDate, formatTimeRange, formatLocation } from '@/utils/date';
 
 export default function EventDetailsScreen() {
@@ -18,50 +19,99 @@ export default function EventDetailsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'az' | 'latest'>('az');
 
-  const { data: eventData, isLoading, error } = useGetEventById(eventId);
+  const { data: eventData, isLoading: isLoadingEvent, error: eventError } = useGetEventById(eventId);
   const event = eventData?.data;
 
-  // Memoize the patient press handler to avoid recreating on each render
+  // Fetch registrations for this event
+  const { data: registrationsData, isLoading: isLoadingRegistrations } = useGetRegistrations({ event_id: eventId });
+  const registrations = useMemo(() => registrationsData?.data?.data ?? [], [registrationsData]);
+
+  // Filter and sort registrations
+  const filteredRegistrations = useMemo(() => {
+    let filtered = registrations;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (reg) =>
+          reg.patient?.full_name?.toLowerCase().includes(query) ||
+          reg.reference_number?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    if (sortBy === 'az') {
+      filtered = [...filtered].sort((a, b) =>
+        (a.patient?.full_name ?? '').localeCompare(b.patient?.full_name ?? '')
+      );
+    } else {
+      filtered = [...filtered].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+
+    return filtered;
+  }, [registrations, searchQuery, sortBy]);
+
+  // Check if screening is completed (all checkpoints done)
+  const isCompleted = useCallback((registration: Registration) => {
+    return registration.attendance_status === 'pass' ||
+           registration.attendance_status === 'referred_optometrist' ||
+           registration.attendance_status === 'referred_specialist';
+  }, []);
+
+  // Navigate to profile with registration data
   const handlePatientPress = useCallback(
-    (patientId: string) => {
-      router.push(`/profile/${patientId}`);
+    (registration: Registration) => {
+      router.push({
+        pathname: '/profile/[id]',
+        params: {
+          id: registration.id.toString(),
+          registrationData: JSON.stringify(registration)
+        }
+      });
     },
     [router]
   );
 
-  // Render patient item for FlatList
-  const renderPatientItem = useCallback(
-    ({ item: patient }: { item: Patient }) => (
-      <TouchableOpacity
-        style={[styles.patientCard, { borderColor: colors.border }]}
-        onPress={() => handlePatientPress(patient.id)}
-        accessibilityLabel={`Patient ${patient.name}, reference ${patient.refNo}${patient.completed ? ', completed' : ''}`}
-        accessibilityRole="button">
-        <View style={[styles.patientAvatar, { backgroundColor: colors.border }]}>
-          <IconSymbol name="person" size={IconSizes.md} color={colors.icon} />
-        </View>
-        <View style={styles.patientInfo}>
-          <ThemedText style={styles.patientName}>{patient.name}</ThemedText>
-          <ThemedText style={[styles.patientRef, { color: colors.textSecondary }]}>
-            {patient.refNo}
-          </ThemedText>
-        </View>
-        {patient.completed && (
-          <View style={[styles.completedBadge, { backgroundColor: DesignColors.success }]}>
-            <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+  // Render registration item for FlatList
+  const renderRegistrationItem = useCallback(
+    ({ item: registration }: { item: Registration }) => {
+      const completed = isCompleted(registration);
+      return (
+        <TouchableOpacity
+          style={[styles.patientCard, { borderColor: colors.border }]}
+          onPress={() => handlePatientPress(registration)}
+          accessibilityLabel={`Patient ${registration.patient?.full_name}, reference ${registration.reference_number}${completed ? ', completed' : ''}`}
+          accessibilityRole="button">
+          <View style={[styles.patientAvatar, { backgroundColor: colors.border }]}>
+            <IconSymbol name="person" size={IconSizes.md} color={colors.icon} />
           </View>
-        )}
-      </TouchableOpacity>
-    ),
-    [colors, handlePatientPress]
+          <View style={styles.patientInfo}>
+            <ThemedText style={styles.patientName}>{registration.patient?.full_name ?? 'Unknown'}</ThemedText>
+            <ThemedText style={[styles.patientRef, { color: colors.textSecondary }]}>
+              {registration.reference_number}
+            </ThemedText>
+          </View>
+          {completed && (
+            <View style={[styles.completedBadge, { backgroundColor: DesignColors.success }]}>
+              <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+            </View>
+          )}
+        </TouchableOpacity>
+      );
+    },
+    [colors, handlePatientPress, isCompleted]
   );
 
   // Key extractor for FlatList
-  const keyExtractor = useCallback((item: Patient) => item.id.toString(), []);
+  const keyExtractor = useCallback((item: Registration) => item.id.toString(), []);
 
-  // Memoize patients list
-  const patients = useMemo(() => MOCK_PATIENTS, []);
+  const isLoading = isLoadingEvent || isLoadingRegistrations;
 
   // Show loading state
   if (isLoading) {
@@ -82,7 +132,7 @@ export default function EventDetailsScreen() {
   }
 
   // Show error state
-  if (error || !event) {
+  if (eventError || !event) {
     return (
       <ThemedView style={Layout.container}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -111,8 +161,8 @@ export default function EventDetailsScreen() {
       </View>
 
       <FlatList
-        data={patients}
-        renderItem={renderPatientItem}
+        data={filteredRegistrations}
+        renderItem={renderRegistrationItem}
         keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -157,6 +207,8 @@ export default function EventDetailsScreen() {
                   placeholder="Search Patient's Name or Ref No."
                   placeholderTextColor={colors.textSecondary}
                   style={[styles.searchInput, { color: colors.text }]}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
                   accessibilityLabel="Search patients"
                 />
               </View>
@@ -167,23 +219,32 @@ export default function EventDetailsScreen() {
               <View style={styles.sortButtons}>
                 <ThemedText style={[styles.sortLabel, { color: colors.text }]}>Sort By</ThemedText>
                 <TouchableOpacity
-                  style={[styles.sortButton, styles.sortButtonActive]}
+                  style={[styles.sortButton, sortBy === 'az' ? styles.sortButtonActive : { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={() => setSortBy('az')}
                   accessibilityLabel="Sort alphabetically"
                   accessibilityRole="button">
-                  <ThemedText style={styles.sortButtonTextActive}>A→Z</ThemedText>
+                  <ThemedText style={sortBy === 'az' ? styles.sortButtonTextActive : [styles.sortButtonText, { color: colors.textSecondary }]}>A→Z</ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.sortButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={[styles.sortButton, sortBy === 'latest' ? styles.sortButtonActive : { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={() => setSortBy('latest')}
                   accessibilityLabel="Sort by latest"
                   accessibilityRole="button">
-                  <ThemedText style={[styles.sortButtonText, { color: colors.textSecondary }]}>Latest</ThemedText>
+                  <ThemedText style={sortBy === 'latest' ? styles.sortButtonTextActive : [styles.sortButtonText, { color: colors.textSecondary }]}>Latest</ThemedText>
                 </TouchableOpacity>
               </View>
               <ThemedText style={[styles.registeredCount, { color: colors.textSecondary }]}>
-                Registered : {patients.length}
+                Registered : {registrations.length}
               </ThemedText>
             </View>
           </>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {searchQuery ? 'No patients found' : 'No registrations yet'}
+            </ThemedText>
+          </View>
         }
         ListFooterComponent={<View style={{ height: 100 }} />}
         ItemSeparatorComponent={() => <View style={{ height: Spacing.md }} />}
@@ -333,5 +394,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: Typography.fontSize.base,
   },
 });

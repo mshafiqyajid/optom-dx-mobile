@@ -1,22 +1,31 @@
+import { useEffect, useMemo, useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { BorderRadius, IconSizes, Spacing, Typography } from '@/constants/design-system';
+import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import type { Registration } from '@/services/registrations/type.registrations';
 
-// Mock guardian details - replace with real data
-const GUARDIAN_DETAILS = {
-  name: 'Puan Noraini binti Hassan',
-  relationship: 'Mother',
-  countryCode: '+60',
-  phoneNumber: '12-345 6789',
-  email: 'Not Provided',
-};
+// Helper to extract country code and phone number
+function parsePhoneNumber(phone: string | null): { countryCode: string; phoneNumber: string } {
+  if (!phone) return { countryCode: '+60', phoneNumber: 'Not Provided' };
+  // Check if phone starts with + (international format)
+  if (phone.startsWith('+60')) {
+    return { countryCode: '+60', phoneNumber: phone.slice(3) };
+  }
+  if (phone.startsWith('+')) {
+    // Find where the country code ends (assume 2-3 digits after +)
+    const match = phone.match(/^(\+\d{1,3})(.*)$/);
+    if (match) {
+      return { countryCode: match[1], phoneNumber: match[2] };
+    }
+  }
+  return { countryCode: '+60', phoneNumber: phone };
+}
 
 const CONSENT_TEXT =
   '"I consent for my child\'s vision and eyes to be screened by qualified personnel. I understand that no eye drops will be used, and results will be shared with me."';
@@ -43,7 +52,7 @@ function InfoField({
   );
 }
 
-function PhoneField({ colors }: { colors: ReturnType<typeof getThemedColors> }) {
+function PhoneField({ colors, countryCode, phoneNumber }: { colors: ReturnType<typeof getThemedColors>; countryCode: string; phoneNumber: string }) {
   return (
     <View style={styles.fieldContainer}>
       <ThemedText style={styles.fieldLabel}>Contact Number</ThemedText>
@@ -54,11 +63,11 @@ function PhoneField({ colors }: { colors: ReturnType<typeof getThemedColors> }) 
             style={styles.flagIcon}
             resizeMode="contain"
           />
-          <ThemedText style={styles.countryCode}>{GUARDIAN_DETAILS.countryCode}</ThemedText>
+          <ThemedText style={styles.countryCode}>{countryCode}</ThemedText>
           <Feather name="chevron-down" size={16} color={colors.textSecondary} />
         </View>
         <View style={styles.phoneNumberContainer}>
-          <ThemedText style={styles.fieldValue}>{GUARDIAN_DETAILS.phoneNumber}</ThemedText>
+          <ThemedText style={styles.fieldValue}>{phoneNumber}</ThemedText>
         </View>
       </View>
     </View>
@@ -66,16 +75,74 @@ function PhoneField({ colors }: { colors: ReturnType<typeof getThemedColors> }) 
 }
 
 export default function GuardianProfileScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, registrationData } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
   const [isConsented, setIsConsented] = useState(true);
 
+  // Parse registration data from params
+  const registration = useMemo<Registration | null>(() => {
+    if (typeof registrationData === 'string') {
+      try {
+        return JSON.parse(registrationData) as Registration;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [registrationData]);
+
+  const patient = registration?.patient;
+
+  // Parse phone number for display
+  const { countryCode, phoneNumber } = useMemo(() => {
+    return parsePhoneNumber(patient?.parent_contact_number ?? null);
+  }, [patient?.parent_contact_number]);
+
   const handleSaveAndContinue = () => {
     router.push(`/checkpoint/${id}`);
   };
+
+  // Show loading if no registration data
+  if (!registration || !patient) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Profile</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+        </View>
+      </ThemedView>
+    );
+  }
+
+  // Check if this is an adult (type 1) - skip guardian for adults
+  const isChild = Number(patient.type) === 2;
+
+  // For adults, redirect directly to checkpoint
+  useEffect(() => {
+    if (!isChild) {
+      router.replace(`/checkpoint/${id}`);
+    }
+  }, [isChild, id, router]);
+
+  // Show loading while redirecting adults
+  if (!isChild) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+        </View>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={Layout.container}>
@@ -97,10 +164,10 @@ export default function GuardianProfileScreen() {
             </View>
 
             <View style={styles.sectionContent}>
-              <InfoField label="Name" value={GUARDIAN_DETAILS.name} icon="user" colors={colors} />
-              <InfoField label="Relationship to Child" value={GUARDIAN_DETAILS.relationship} icon="users" colors={colors} />
-              <PhoneField colors={colors} />
-              <InfoField label="Email Address" value={GUARDIAN_DETAILS.email} icon="mail" colors={colors} />
+              <InfoField label="Name" value={patient.parent_full_name ?? 'Not Provided'} icon="user" colors={colors} />
+              <InfoField label="Relationship to Child" value={patient.parent_relationship ?? 'Not Provided'} icon="users" colors={colors} />
+              <PhoneField colors={colors} countryCode={countryCode} phoneNumber={phoneNumber} />
+              <InfoField label="Email Address" value={patient.parent_email ?? 'Not Provided'} icon="mail" colors={colors} />
             </View>
           </View>
 
@@ -275,5 +342,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semibold,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
