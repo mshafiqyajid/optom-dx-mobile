@@ -213,13 +213,63 @@ POST /assessment/case-submission
 | Login | `(auth)/login.tsx` | `useLogin` | Pending |
 | Home | `(tabs)/index.tsx` | `useGetEvents` | Pending |
 | Event Details | `event/[id].tsx` | `useGetEventById` | Pending |
-| Checkpoint | `checkpoint/[id].tsx` | `useGetCheckpoints` | Pending |
-| History Taking | `history-taking/[id].tsx` | `useGetHistoryTaking`, `useCreateOrUpdateHistoryTaking` | Pending |
-| Preliminary Test | `preliminary-test/[id].tsx` | `useGetPreliminaryTest`, `useCreateOrUpdatePreliminaryTest` | Pending |
-| Visual Acuity | `visual-acuity/[id].tsx` | `useGetVisualAcuityAssessment`, `useCreateOrUpdateVisualAcuityAssessment` | Pending |
-| External Eye | `external-eye/[id].tsx` | `useGetExternalEyeExamination`, `useCreateOrUpdateExternalEyeExamination`, `useUploadExternalEyeAttachment` | Pending |
-| Refraction | `refraction/[id].tsx` | `useGetRefractionAssessment`, `useCreateOrUpdateRefractionAssessment` | Pending |
-| Case Submission | `case-submission/[id].tsx` | `useGetCaseSubmission`, `useCreateOrUpdateCaseSubmission` | Pending |
+| Checkpoint | `checkpoint/[id].tsx` | `useGetCheckpoints` | ✅ Integrated |
+| History Taking | `history-taking/[id].tsx` | `useGetHistoryTaking`, `useCreateOrUpdateHistoryTaking` | ✅ Integrated |
+| Preliminary Test | `preliminary-test/[id].tsx` | `useGetPreliminaryTest`, `useCreateOrUpdatePreliminaryTest` | ✅ Integrated |
+| Visual Acuity | `visual-acuity/[id].tsx` | `useGetVisualAcuityAssessment`, `useCreateOrUpdateVisualAcuityAssessment` | ✅ Integrated |
+| External Eye | `external-eye/[id].tsx` | `useGetExternalEyeExamination`, `useCreateOrUpdateExternalEyeExamination`, `useUploadExternalEyeAttachment` | ✅ Integrated |
+| Refraction | `refraction/[id].tsx` | `useGetRefractionAssessment`, `useCreateOrUpdateRefractionAssessment` | ✅ Integrated |
+| Case Submission | `case-submission/[id].tsx` | `useGetCaseSubmission`, `useCreateOrUpdateCaseSubmission` | ✅ Integrated |
+
+## Backend/UI Mismatch Notes
+
+The following notes highlight areas where the mobile UI data structure may differ from the backend API response. Review and update the backend or mobile UI as needed.
+
+### Checkpoint Screen
+
+- **Status**: Uses mock checkpoint type mapping (`history_taking`, `preliminary_test`, etc.)
+- **TODO**: Verify backend returns `checkpoint.type` field matching these values
+
+### History Taking Screen
+
+- **Section A fields**: Mobile expects `ocular_history`, `current_systemic_medication`, `drug_allergy`, `systemic_history`, `family_ocular_history`, `family_systemic_history`
+- **Section B fields**: Mobile expects `current_wearing` (glasses/contact_lens), `type` (single_vision/progressive/bifocal/multifocal), `lens_type` (plastic/glass/polycarbonate)
+- **TODO**: Confirm backend `description` JSON structure matches these field names
+
+### Preliminary Test Screen
+
+- **Section A**: Pupil assessment with `odSize`, `osSize`, `odReaction`, `osReaction`, `rapd`, `rapdWhichEye`, `colourVisionResult`
+- **Section B**: Ocular motility with `fieldOfGaze`, `isNormal`, `findings`, `coverTestDistance`, `coverTestNear`, `nearPointConvergence`
+- **Section C**: Intraocular pressure with `time`, `odReading`, `osReading`
+- **TODO**: Confirm backend accepts this nested structure in `description` field
+
+### Visual Acuity Screen
+
+- **Fields per eye**: `aided`, `unaided`, `pinHole` for both `right`/`left` eyes
+- **Tests**: `near_test` and `distance_test` sections
+- **TODO**: Confirm backend field names (e.g., `un_aided` vs `unaided`, `pin_hole` vs `pinHole`)
+
+### External Eye Examination Screen
+
+- **Anterior segment**: Multi-select options for `eyelid`, `conjunctiva`, `cornea`, `iris`, `pupil`, `lens`, `others` per eye
+- **Fundus**: `cup_disc_ratio`, `optic_disc`, `macula`, `blood_vessel`, `peripheral_retina`, `others` per eye
+- **Attachments**: Uses `useUploadExternalEyeAttachment` hook with FormData for image uploads
+- **TODO**: Verify backend accepts array values for multi-select fields, confirm attachment endpoint response format
+
+### Refraction Assessment Screen
+
+- **Objective refraction**: `sph`, `cyl`, `axis`, `va` per eye
+- **Subjective refraction**: Same structure as objective
+- **Reading add**: `add_power`, `near_va` per eye
+- **TODO**: Confirm backend field names and structure in `description` JSON
+
+### Case Submission Screen
+
+- **Eye Screening Summary**: Currently uses mock data - needs to fetch from backend
+- **Referral**: `enter_referral_list` ('yes'/'no'), `follow_up` ('no_need'/'3_months'/'1_month')
+- **Overall result**: 'pass' | 'refer' | 'urgent_refer'
+- **TODO**: Backend should provide aggregated screening summary data for display
+- **TODO**: Confirm referral field value options match backend enum/validation
 
 ## Integration Pattern
 
