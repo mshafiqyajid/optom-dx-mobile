@@ -8,9 +8,23 @@ import { Dropdown, DropdownOption } from '@/components/ui/dropdown';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import {
+  useGetExternalEyeExamination,
+  useCreateOrUpdateExternalEyeExamination,
+  useUploadExternalEyeAttachment,
+} from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Image, Alert } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+  Alert,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
 // Dropdown options
@@ -61,6 +75,33 @@ const ALIGNMENT_OPTIONS: DropdownOption[] = [
   { value: 'hypertropia', label: 'Hypertropia' },
 ];
 
+// External Eye Examination data structure
+interface AnteriorData {
+  right_eye: {
+    eyelids_lashes: string;
+    conjunctiva: string;
+    cornea: string;
+    iris_pupil: string;
+    lens: string;
+    alignment: string;
+    observation: string;
+  };
+  left_eye: {
+    eyelids_lashes: string;
+    conjunctiva: string;
+    cornea: string;
+    iris_pupil: string;
+    lens: string;
+    alignment: string;
+    observation: string;
+  };
+}
+
+interface FundusData {
+  observation: string;
+  result: 'pass' | 'refer' | null;
+}
+
 export default function ExternalEyeExaminationScreen() {
   const { id } = useLocalSearchParams();
   const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
@@ -69,12 +110,18 @@ export default function ExternalEyeExaminationScreen() {
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  // API hooks
+  const { data, isLoading: isFetching } = useGetExternalEyeExamination(registrationId);
+  const { mutate: saveExternalEye, isPending: isSaving } = useCreateOrUpdateExternalEyeExamination();
+  const { mutate: uploadAttachment } = useUploadExternalEyeAttachment(registrationId);
+
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
 
   // Steps: 1-Camera Right, 2-Form Right Part 1, 3-Form Right Part 2,
   //        4-Camera Left, 5-Form Left Part 1, 6-Form Left Part 2, 7-Final Notes
   const [currentStep, setCurrentStep] = useState(1);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Right Eye captured image
   const [rightEyeImage, setRightEyeImage] = useState<string | null>(null);
@@ -101,7 +148,70 @@ export default function ExternalEyeExaminationScreen() {
 
   // Final Notes
   const [finalObservation, setFinalObservation] = useState('');
-  const [testResult, setTestResult] = useState<'pass' | 'refer' | null>('pass');
+  const [testResult, setTestResult] = useState<'pass' | 'refer' | null>(null);
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data && !hasLoadedData) {
+      const { anterior, fundus } = data.data;
+
+      if (anterior) {
+        const ant = anterior as unknown as AnteriorData;
+        // Right eye
+        setRightEyelidsLashes(ant.right_eye?.eyelids_lashes ?? '');
+        setRightConjunctiva(ant.right_eye?.conjunctiva ?? '');
+        setRightCornea(ant.right_eye?.cornea ?? '');
+        setRightIrisPupil(ant.right_eye?.iris_pupil ?? '');
+        setRightLens(ant.right_eye?.lens ?? '');
+        setRightAlignment(ant.right_eye?.alignment ?? '');
+        setRightObservation(ant.right_eye?.observation ?? '');
+        // Left eye
+        setLeftEyelidsLashes(ant.left_eye?.eyelids_lashes ?? '');
+        setLeftConjunctiva(ant.left_eye?.conjunctiva ?? '');
+        setLeftCornea(ant.left_eye?.cornea ?? '');
+        setLeftIrisPupil(ant.left_eye?.iris_pupil ?? '');
+        setLeftLens(ant.left_eye?.lens ?? '');
+        setLeftAlignment(ant.left_eye?.alignment ?? '');
+        setLeftObservation(ant.left_eye?.observation ?? '');
+      }
+
+      if (fundus) {
+        const fun = fundus as unknown as FundusData;
+        setFinalObservation(fun.observation ?? '');
+        setTestResult(fun.result ?? null);
+      }
+
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build anterior data from form state
+  const buildAnteriorData = (): AnteriorData => ({
+    right_eye: {
+      eyelids_lashes: rightEyelidsLashes,
+      conjunctiva: rightConjunctiva,
+      cornea: rightCornea,
+      iris_pupil: rightIrisPupil,
+      lens: rightLens,
+      alignment: rightAlignment,
+      observation: rightObservation,
+    },
+    left_eye: {
+      eyelids_lashes: leftEyelidsLashes,
+      conjunctiva: leftConjunctiva,
+      cornea: leftCornea,
+      iris_pupil: leftIrisPupil,
+      lens: leftLens,
+      alignment: leftAlignment,
+      observation: leftObservation,
+    },
+  });
+
+  // Build fundus data from form state
+  const buildFundusData = (): FundusData => ({
+    observation: finalObservation,
+    result: testResult,
+  });
 
   const handleTakePicture = async () => {
     if (cameraRef.current) {
@@ -118,7 +228,7 @@ export default function ExternalEyeExaminationScreen() {
           }
           setCurrentStep(currentStep + 1);
         }
-      } catch (error) {
+      } catch {
         Alert.alert('Error', 'Failed to take picture. Please try again.');
       }
     }
@@ -128,9 +238,43 @@ export default function ExternalEyeExaminationScreen() {
     if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Save and go back
-      // TODO: Call useCreateOrUpdateExternalEyeExamination mutation
-      router.back();
+      // Save form data
+      saveExternalEye(
+        {
+          registration_id: registrationId,
+          anterior: buildAnteriorData() as unknown as Record<string, unknown>,
+          fundus: buildFundusData() as unknown as Record<string, unknown>,
+        },
+        {
+          onSuccess: () => {
+            // Upload images if captured
+            if (rightEyeImage) {
+              uploadAttachment({
+                file: {
+                  uri: rightEyeImage,
+                  name: `anterior_right_${registrationId}.jpg`,
+                  type: 'image/jpeg',
+                },
+                type: 'anterior_right',
+              });
+            }
+            if (leftEyeImage) {
+              uploadAttachment({
+                file: {
+                  uri: leftEyeImage,
+                  name: `anterior_left_${registrationId}.jpg`,
+                  type: 'image/jpeg',
+                },
+                type: 'anterior_left',
+              });
+            }
+            router.back();
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to save external eye examination data');
+          },
+        }
+      );
     }
   };
 
@@ -459,6 +603,18 @@ export default function ExternalEyeExaminationScreen() {
   };
 
   const renderContent = () => {
+    // Show loading when fetching initial data (only on form steps)
+    if (isFetching && currentStep !== 1 && currentStep !== 4) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      );
+    }
+
     if (currentStep === 1) {
       return renderCameraStep('right');
     } else if (currentStep === 4) {
@@ -475,6 +631,8 @@ export default function ExternalEyeExaminationScreen() {
             label={currentStep === 7 ? 'Save' : 'Next'}
             onPress={handleNext}
             showChevron={currentStep < 7}
+            loading={isSaving}
+            disabled={isSaving}
           />
         </>
       );
@@ -705,5 +863,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semibold,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
   },
 });
