@@ -6,9 +6,20 @@ import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGetCaseSubmission, useCreateOrUpdateCaseSubmission } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Pressable } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Modal,
+  Pressable,
+} from 'react-native';
 
 // Mock data for screening summary - in real app, this would come from API/state
 const mockScreeningSummary = {
@@ -67,6 +78,16 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
+// Case Submission description data structure
+interface CaseSubmissionDescription {
+  referral: {
+    enter_referral_list: 'yes' | 'no';
+    follow_up: 'no_need' | '3_months' | '1_month';
+  };
+  overall_result: 'pass' | 'refer' | 'urgent_refer';
+  note: string;
+}
+
 export default function CaseSubmissionScreen() {
   const { id } = useLocalSearchParams();
   const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
@@ -75,30 +96,67 @@ export default function CaseSubmissionScreen() {
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  // API hooks
+  const { data, isLoading: isFetching } = useGetCaseSubmission(registrationId);
+  const { mutate: saveCaseSubmission, isPending: isSaving } = useCreateOrUpdateCaseSubmission();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Step 2: Referral
   const [enterReferralList, setEnterReferralList] = useState<'yes' | 'no'>('no');
   const [referralFollowUp, setReferralFollowUp] = useState<'no_need' | '3_months' | '1_month'>('no_need');
 
   // Step 3: Overall Result
-  const [overallResult, setOverallResult] = useState<'pass' | 'refer' | 'urgent_refer'>('urgent_refer');
+  const [overallResult, setOverallResult] = useState<'pass' | 'refer' | 'urgent_refer'>('pass');
   const [note, setNote] = useState('');
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data?.description && !hasLoadedData) {
+      const desc = data.data.description as unknown as CaseSubmissionDescription;
+
+      if (desc.referral) {
+        setEnterReferralList(desc.referral.enter_referral_list ?? 'no');
+        setReferralFollowUp(desc.referral.follow_up ?? 'no_need');
+      }
+
+      setOverallResult(desc.overall_result ?? 'pass');
+      setNote(desc.note ?? '');
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build description data from form state
+  const buildDescriptionData = (): CaseSubmissionDescription => ({
+    referral: {
+      enter_referral_list: enterReferralList,
+      follow_up: referralFollowUp,
+    },
+    overall_result: overallResult,
+    note: note,
+  });
 
   const handleNext = () => {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
       // Submit and show success modal
-      console.log('Submitting case:', {
-        registrationId,
-        enterReferralList,
-        referralFollowUp,
-        overallResult,
-        note,
-      });
-      setShowSuccessModal(true);
+      saveCaseSubmission(
+        {
+          registration_id: registrationId,
+          description: buildDescriptionData() as unknown as Record<string, unknown>,
+        },
+        {
+          onSuccess: () => {
+            setShowSuccessModal(true);
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to submit case');
+          },
+        }
+      );
     }
   };
 
@@ -352,6 +410,27 @@ export default function CaseSubmissionScreen() {
     }
   };
 
+  // Loading state
+  if (isFetching) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Case Submission</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={Layout.container}>
       {/* Header */}
@@ -375,12 +454,23 @@ export default function CaseSubmissionScreen() {
       {/* Fixed Bottom Button */}
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleNext}>
-          <ThemedText style={styles.nextButtonText}>
-            {currentStep === 4 ? 'Confirm & Complete Assessment' : 'Next'}
-          </ThemedText>
-          <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
+          style={[
+            styles.nextButton,
+            { backgroundColor: DesignColors.primary },
+            isSaving && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <ThemedText style={styles.nextButtonText}>
+                {currentStep === 4 ? 'Confirm & Complete Assessment' : 'Next'}
+              </ThemedText>
+              {currentStep < 4 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -618,5 +708,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semibold,
     color: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });
