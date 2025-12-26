@@ -1,16 +1,16 @@
-import { SectionCard } from '@/components/ui/section-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadioButton } from '@/components/ui/radio-button';
-import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
+import { ScreenHeader, LoadingState, FixedBottomButton, SectionCard } from '@/components/ui';
+import { BorderRadius, DesignColors, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useMultiStepForm, useFormDataLoader } from '@/hooks/use-multi-step-form';
 import { useGetRefractionAssessment, useCreateOrUpdateRefractionAssessment } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -123,6 +123,8 @@ interface RefractionDescription {
   operator_notes: OperatorNotes;
 }
 
+const TOTAL_STEPS = 3;
+
 export default function RefractionAssessmentScreen() {
   const { id } = useLocalSearchParams();
   const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
@@ -135,8 +137,9 @@ export default function RefractionAssessmentScreen() {
   const { data, isLoading: isFetching } = useGetRefractionAssessment(registrationId);
   const { mutate: saveRefraction, isPending: isSaving } = useCreateOrUpdateRefractionAssessment();
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [hasLoadedData, setHasLoadedData] = useState(false);
+  // Multi-step form management
+  const { currentStep, isLastStep, nextStep } = useMultiStepForm({ totalSteps: TOTAL_STEPS });
+  const { hasLoaded, markAsLoaded } = useFormDataLoader();
 
   // Step 1: Objective Refraction - Text inputs
   const [objRightSph, setObjRightSph] = useState('');
@@ -171,7 +174,7 @@ export default function RefractionAssessmentScreen() {
 
   // Pre-fill form from existing data (uses backend {a, b, c, d} structure)
   useEffect(() => {
-    if (data?.data?.description && !hasLoadedData) {
+    if (data?.data?.description && !hasLoaded) {
       const desc = data.data.description as unknown as RefractionDescription;
 
       if (desc.objective_refraction) {
@@ -203,9 +206,9 @@ export default function RefractionAssessmentScreen() {
         setOperatorObservation(desc.operator_notes.operator_observation ?? '');
         setTestResult((desc.operator_notes.test_result as 'pass' | 'refer') ?? null);
       }
-      setHasLoadedData(true);
+      markAsLoaded();
     }
-  }, [data, hasLoadedData]);
+  }, [data, hasLoaded, markAsLoaded]);
 
   // Build description data from form state matching backend structure
   const buildDescriptionData = (): RefractionDescription => ({
@@ -225,9 +228,7 @@ export default function RefractionAssessmentScreen() {
   });
 
   const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    if (isLastStep) {
       // Save and navigate back
       saveRefraction(
         {
@@ -235,22 +236,12 @@ export default function RefractionAssessmentScreen() {
           description: buildDescriptionData(),
         },
         {
-          onSuccess: () => {
-            router.back();
-          },
-          onError: (error) => {
-            Alert.alert('Error', error.message || 'Failed to save refraction assessment data');
-          },
+          onSuccess: () => router.back(),
+          onError: (error) => Alert.alert('Error', error.message || 'Failed to save refraction assessment data'),
         }
       );
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
     } else {
-      router.back();
+      nextStep();
     }
   };
 
@@ -476,94 +467,41 @@ export default function RefractionAssessmentScreen() {
     }
   };
 
-  // Loading state
+  // Loading state using shared component
   if (isFetching) {
     return (
       <ThemedView style={Layout.container}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Refraction Assessment</ThemedText>
-          <View style={{ width: 40 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={DesignColors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading...
-          </ThemedText>
-        </View>
+        <ScreenHeader title="Refraction Assessment" />
+        <LoadingState message="Loading..." fullScreen />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={Layout.container}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
-        </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Refraction Assessment</ThemedText>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="Refraction Assessment" />
 
       <ScrollView style={Layout.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {renderStep()}
-        </View>
-
-        {/* Bottom padding for button */}
-        <View style={{ height: 120 }} />
+        <View style={styles.content}>{renderStep()}</View>
+        <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {/* Fixed Bottom Button */}
-      <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            { backgroundColor: DesignColors.primary },
-            isSaving && styles.buttonDisabled,
-          ]}
-          onPress={handleNext}
-          disabled={isSaving}>
-          {isSaving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <ThemedText style={styles.nextButtonText}>
-                {currentStep === 3 ? 'Save' : 'Next'}
-              </ThemedText>
-              {currentStep < 3 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      <FixedBottomButton
+        label={isLastStep ? 'Save' : 'Next'}
+        onPress={handleNext}
+        loading={isSaving}
+        showChevron={!isLastStep}
+      />
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.bold,
-  },
   content: {
     padding: Spacing.lg,
+  },
+  bottomPadding: {
+    height: 120,
   },
   eyeSection: {
     marginBottom: Spacing.lg,
@@ -683,38 +621,5 @@ const styles = StyleSheet.create({
     minHeight: 150,
     borderWidth: 1,
     backgroundColor: 'transparent',
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: Spacing.lg,
-    paddingBottom: 40,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-    gap: Spacing.sm,
-  },
-  nextButtonText: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.semibold,
-    color: '#FFFFFF',
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  loadingText: {
-    fontSize: Typography.fontSize.base,
   },
 });

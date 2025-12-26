@@ -2,12 +2,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadioButton } from '@/components/ui/radio-button';
-import { SectionCard } from '@/components/ui/section-card';
-import { FixedBottomButton } from '@/components/ui/fixed-bottom-button';
+import { ScreenHeader, LoadingState, FixedBottomButton, SectionCard } from '@/components/ui';
 import { Dropdown, DropdownOption } from '@/components/ui/dropdown';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useFormDataLoader } from '@/hooks/use-multi-step-form';
 import {
   useGetExternalEyeExamination,
   useCreateOrUpdateExternalEyeExamination,
@@ -16,7 +16,6 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -116,7 +115,7 @@ export default function ExternalEyeExaminationScreen() {
   // Steps: 1-Camera Right, 2-Form Right Part 1, 3-Form Right Part 2,
   //        4-Camera Left, 5-Form Left Part 1, 6-Form Left Part 2, 7-Final Notes
   const [currentStep, setCurrentStep] = useState(1);
-  const [hasLoadedData, setHasLoadedData] = useState(false);
+  const { hasLoaded, markAsLoaded } = useFormDataLoader();
 
   // Right Eye captured image
   const [rightEyeImage, setRightEyeImage] = useState<string | null>(null);
@@ -147,7 +146,7 @@ export default function ExternalEyeExaminationScreen() {
 
   // Pre-fill form from existing data
   useEffect(() => {
-    if (data?.data && !hasLoadedData) {
+    if (data?.data && !hasLoaded) {
       const { anterior } = data.data;
 
       if (anterior) {
@@ -173,9 +172,9 @@ export default function ExternalEyeExaminationScreen() {
         setTestResult((ant.operator_notes?.test_result as 'pass' | 'refer') ?? null);
       }
 
-      setHasLoadedData(true);
+      markAsLoaded();
     }
-  }, [data, hasLoadedData]);
+  }, [data, hasLoaded, markAsLoaded]);
 
   // Build anterior data from form state matching backend structure
   const buildAnteriorData = (): AnteriorData => ({
@@ -291,13 +290,7 @@ export default function ExternalEyeExaminationScreen() {
   if (isCameraStep && !permission?.granted) {
     return (
       <ThemedView style={Layout.container}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>External Eye Observation</ThemedText>
-          <View style={{ width: 40 }} />
-        </View>
+        <ScreenHeader title="External Eye Observation" />
         <View style={styles.centerContent}>
           <IconSymbol name="camera" size={64} color={colors.textSecondary} />
           <ThemedText style={styles.permissionTitle}>Camera Access Required</ThemedText>
@@ -594,14 +587,7 @@ export default function ExternalEyeExaminationScreen() {
   const renderContent = () => {
     // Show loading when fetching initial data (only on form steps)
     if (isFetching && currentStep !== 1 && currentStep !== 4) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={DesignColors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading...
-          </ThemedText>
-        </View>
-      );
+      return <LoadingState message="Loading..." fullScreen />;
     }
 
     if (currentStep === 1) {
@@ -613,7 +599,7 @@ export default function ExternalEyeExaminationScreen() {
         <>
           <ScrollView style={Layout.scrollView} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>{renderFormStep()}</View>
-            <View style={{ height: 120 }} />
+            <View style={styles.bottomPadding} />
           </ScrollView>
 
           <FixedBottomButton
@@ -632,18 +618,12 @@ export default function ExternalEyeExaminationScreen() {
     <ThemedView style={Layout.container}>
       {/* Header - only show for form steps */}
       {currentStep !== 1 && currentStep !== 4 && (
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>External Eye Observation</ThemedText>
-          <View style={{ width: 40 }} />
-        </View>
+        <ScreenHeader title="External Eye Observation" onBack={handleBack} />
       )}
 
       {/* Camera header */}
       {(currentStep === 1 || currentStep === 4) && (
-        <View style={[styles.cameraHeader]}>
+        <View style={styles.cameraHeader}>
           <TouchableOpacity onPress={handleBack} style={styles.cameraBackButton}>
             <IconSymbol name="xmark" size={IconSizes.lg} color="#FFFFFF" />
           </TouchableOpacity>
@@ -660,23 +640,11 @@ export default function ExternalEyeExaminationScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
+  content: {
+    padding: Spacing.lg,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.bold,
+  bottomPadding: {
+    height: 120,
   },
   cameraHeader: {
     flexDirection: 'row',
@@ -702,9 +670,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.bold,
     color: '#FFFFFF',
-  },
-  content: {
-    padding: Spacing.lg,
   },
   formField: {
     marginBottom: Spacing.lg,
@@ -852,14 +817,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semibold,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  loadingText: {
-    fontSize: Typography.fontSize.base,
   },
 });
