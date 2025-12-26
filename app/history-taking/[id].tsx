@@ -6,47 +6,123 @@ import { RadioButton } from '@/components/ui/radio-button';
 import { BorderRadius, DesignColors, IconSizes, Spacing, Typography } from '@/constants/design-system';
 import { Layout, getThemedColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGetHistoryTaking, useCreateOrUpdateHistoryTaking } from '@/services';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+// Section A form data structure
+interface SectionAData {
+  blurred_vision: 'yes' | 'no' | null;
+  blurred_vision_notes: string;
+  eye_pain: 'yes' | 'no' | null;
+  eye_pain_notes: string;
+  pain_location: 'localise' | 'radiate' | null;
+  onset: 'gradual' | 'sudden' | null;
+  frequency: 'frequent' | 'occasional' | null;
+  timing: 'daytime' | 'nighttime' | null;
+  severity: number;
+  relief_factor: string;
+}
 
 export default function HistoryTakingScreen() {
-  const { id: _id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getThemedColors(isDark);
 
+  const registrationId = typeof id === 'string' ? parseInt(id, 10) : 0;
+
+  // API hooks
+  const { data, isLoading: isFetching } = useGetHistoryTaking(registrationId);
+  const { mutate: saveHistoryTaking, isPending: isSaving } = useCreateOrUpdateHistoryTaking();
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Question 1
-  const [blurredVision, setBlurredVision] = useState<'yes' | 'no' | null>('yes');
+  const [blurredVision, setBlurredVision] = useState<'yes' | 'no' | null>(null);
   const [blurredVisionNotes, setBlurredVisionNotes] = useState('');
 
   // Question 2
-  const [eyePain, setEyePain] = useState<'yes' | 'no' | null>('yes');
+  const [eyePain, setEyePain] = useState<'yes' | 'no' | null>(null);
   const [eyePainNotes, setEyePainNotes] = useState('');
 
   // Question 3 & 4
-  const [painLocation, setPainLocation] = useState<'localise' | 'radiate' | null>('localise');
-  const [onSet, setOnSet] = useState<'gradual' | 'sudden' | null>('gradual');
+  const [painLocation, setPainLocation] = useState<'localise' | 'radiate' | null>(null);
+  const [onSet, setOnSet] = useState<'gradual' | 'sudden' | null>(null);
 
   // Question 5 & 6
-  const [frequency, setFrequency] = useState<'frequent' | 'occasional' | null>('frequent');
-  const [timing, setTiming] = useState<'daytime' | 'nighttime' | null>('daytime');
+  const [frequency, setFrequency] = useState<'frequent' | 'occasional' | null>(null);
+  const [timing, setTiming] = useState<'daytime' | 'nighttime' | null>(null);
 
   // Question 7
-  const [severityValue, setSeverityValue] = useState(9);
+  const [severityValue, setSeverityValue] = useState(5);
 
   // Question 8
   const [reliefFactor, setReliefFactor] = useState('');
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (data?.data?.section_a && !hasLoadedData) {
+      const sectionA = data.data.section_a as SectionAData;
+      setBlurredVision(sectionA.blurred_vision ?? null);
+      setBlurredVisionNotes(sectionA.blurred_vision_notes ?? '');
+      setEyePain(sectionA.eye_pain ?? null);
+      setEyePainNotes(sectionA.eye_pain_notes ?? '');
+      setPainLocation(sectionA.pain_location ?? null);
+      setOnSet(sectionA.onset ?? null);
+      setFrequency(sectionA.frequency ?? null);
+      setTiming(sectionA.timing ?? null);
+      setSeverityValue(sectionA.severity ?? 5);
+      setReliefFactor(sectionA.relief_factor ?? '');
+      setHasLoadedData(true);
+    }
+  }, [data, hasLoadedData]);
+
+  // Build section_a data from form state
+  const buildSectionAData = (): SectionAData => ({
+    blurred_vision: blurredVision,
+    blurred_vision_notes: blurredVisionNotes,
+    eye_pain: eyePain,
+    eye_pain_notes: eyePainNotes,
+    pain_location: painLocation,
+    onset: onSet,
+    frequency: frequency,
+    timing: timing,
+    severity: severityValue,
+    relief_factor: reliefFactor,
+  });
 
   const handleNext = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Navigate back or to next section
-      router.back();
+      // Save and navigate back
+      saveHistoryTaking(
+        {
+          registration_id: registrationId,
+          section_a: buildSectionAData(),
+          section_b: data?.data?.section_b ?? {}, // Preserve existing section_b if any
+        },
+        {
+          onSuccess: () => {
+            router.back();
+          },
+          onError: (error) => {
+            Alert.alert('Error', error.message || 'Failed to save history taking data');
+          },
+        }
+      );
     }
   };
 
@@ -241,6 +317,27 @@ export default function HistoryTakingScreen() {
     }
   };
 
+  // Loading state
+  if (isFetching) {
+    return (
+      <ThemedView style={Layout.container}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={IconSizes.lg} color={colors.text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>History Taking</ThemedText>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={DesignColors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={Layout.container}>
       {/* Header */}
@@ -273,10 +370,23 @@ export default function HistoryTakingScreen() {
       {/* Fixed Bottom Button */}
       <View style={[styles.bottomContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: DesignColors.primary }]}
-          onPress={handleNext}>
-          <ThemedText style={styles.nextButtonText}>{currentStep === 5 ? 'Done' : 'Next'}</ThemedText>
-          {currentStep < 5 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+          style={[
+            styles.nextButton,
+            { backgroundColor: DesignColors.primary },
+            isSaving && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={isSaving}>
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <ThemedText style={styles.nextButtonText}>
+                {currentStep === 5 ? 'Save' : 'Next'}
+              </ThemedText>
+              {currentStep < 5 && <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />}
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -365,5 +475,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semibold,
     color: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loadingText: {
+    fontSize: Typography.fontSize.base,
   },
 });
