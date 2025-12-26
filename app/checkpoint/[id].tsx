@@ -86,12 +86,27 @@ export default function CheckpointScreen() {
                 style={[styles.stepCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 disabled={step.status === CheckpointStepStatus.COMPLETED}
                 onPress={() => {
-                  if (step.title === 'History Taking') {
-                    router.push(`/history-taking/${id}`);
-                  } else if (step.title === 'Preliminary Test') {
-                    router.push(`/preliminary-test/${id}`);
-                  } else if (step.title === 'Visual Acuity Assessment') {
-                    router.push(`/visual-acuity/${id}`);
+                  switch (step.title) {
+                    case 'History Taking':
+                      router.push(`/history-taking/${id}`);
+                      break;
+                    case 'Preliminary Test':
+                      router.push(`/preliminary-test/${id}`);
+                      break;
+                    case 'Visual Acuity Assessment':
+                      router.push(`/visual-acuity/${id}`);
+                      break;
+                    case 'External Eye Examination':
+                      router.push(`/external-eye/${id}`);
+                      break;
+                    case 'Refraction Assessment':
+                      router.push(`/refraction/${id}`);
+                      break;
+                    case 'Referral & Case Submission':
+                      router.push(`/case-submission/${id}`);
+                      break;
+                    default:
+                      break;
                   }
                 }}>
                 <View style={styles.stepCardContent}>
